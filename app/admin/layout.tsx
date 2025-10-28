@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { 
@@ -16,7 +16,6 @@ import {
   Menu,
   X
 } from 'lucide-react'
-import { useState } from 'react'
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -26,21 +25,45 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
+
+  // Memoized redirect function to prevent unnecessary re-renders
+  const handleRedirect = useCallback(() => {
+    if (!isRedirecting) {
+      setIsRedirecting(true)
+      router.push('/login')
+    }
+  }, [router, isRedirecting])
 
   // Redirect if not admin
   useEffect(() => {
     if (status === 'loading') return // Still loading
     
     if (!session || session.user?.role !== 'admin') {
-      router.push('/login')
+      handleRedirect()
     }
-  }, [session, status, router])
+  }, [session, status, handleRedirect])
+
+  // Close sidebar when clicking outside on mobile
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setSidebarOpen(false)
+      }
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Show loading while checking authentication
-  if (status === 'loading') {
+  if (status === 'loading' || isRedirecting) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
       </div>
     )
   }

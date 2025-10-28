@@ -1,7 +1,23 @@
 import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { supabaseAdmin } from './supabase'
+import { supabaseAdmin, isDemoMode } from './supabase'
 import bcrypt from 'bcryptjs'
+
+// Type definitions for better type safety
+interface User {
+  id: string
+  email: string
+  name: string | null
+  role: 'customer' | 'admin'
+  password_hash: string | null
+}
+
+interface AuthResult {
+  id: string
+  email: string
+  name: string | null
+  role: 'customer' | 'admin'
+}
 
 // NextAuth configuration for authentication
 // This handles both customer and admin login with role-based access
@@ -13,15 +29,16 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' }
       },
-      async authorize(credentials) {
+      async authorize(credentials): Promise<AuthResult | null> {
         if (!credentials?.email || !credentials?.password) {
+          console.warn('Missing credentials')
           return null
         }
 
         try {
           // Check if Supabase is properly configured
-          if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co') {
-            console.error('Supabase not configured - using demo mode')
+          if (isDemoMode) {
+            console.warn('Supabase not configured - using demo mode')
             
             // Demo mode: Customer user
             if (credentials.email === 'demo@example.com' && credentials.password === 'password123') {
@@ -43,6 +60,7 @@ export const authOptions: NextAuthOptions = {
               }
             }
             
+            console.warn('Invalid demo credentials')
             return null
           }
 
@@ -53,16 +71,26 @@ export const authOptions: NextAuthOptions = {
             .eq('email', credentials.email)
             .single()
 
-          if (error || !user) {
-            console.error('User not found:', error)
+          if (error) {
+            console.error('Database error:', error.message)
+            return null
+          }
+
+          if (!user) {
+            console.warn('User not found:', credentials.email)
             return null
           }
 
           // Verify password using bcrypt
-          const isPasswordValid = await bcrypt.compare(credentials.password, user.password_hash || '')
+          if (!user.password_hash) {
+            console.error('User has no password hash:', credentials.email)
+            return null
+          }
+
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password_hash)
 
           if (!isPasswordValid) {
-            console.error('Invalid password for user:', credentials.email)
+            console.warn('Invalid password for user:', credentials.email)
             return null
           }
 
@@ -74,7 +102,7 @@ export const authOptions: NextAuthOptions = {
             role: user.role,
           }
         } catch (error) {
-          console.error('Auth error:', error)
+          console.error('Auth error:', error instanceof Error ? error.message : 'Unknown error')
           return null
         }
       }

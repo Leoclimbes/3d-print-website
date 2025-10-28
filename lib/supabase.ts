@@ -1,22 +1,47 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Create Supabase client for client-side operations
-// This uses the public anon key and is safe to use in the browser
+// Environment validation
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-key'
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Check if we're in demo mode
+export const isDemoMode = supabaseUrl === 'https://placeholder.supabase.co' || 
+                         supabaseAnonKey === 'placeholder-key' ||
+                         supabaseServiceRoleKey === 'placeholder-service-key'
+
+// Create Supabase client for client-side operations
+// This uses the public anon key and is safe to use in the browser
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  }
+})
 
 // Create Supabase client for server-side operations with service role
 // This has elevated permissions and should only be used in API routes
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-key'
-
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
   }
 })
+
+// Utility function to check if Supabase is properly configured
+export function isSupabaseConfigured(): boolean {
+  return !isDemoMode
+}
+
+// Utility function to get configuration status
+export function getConfigStatus() {
+  return {
+    isDemoMode,
+    hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+  }
+}
 
 // Database type definitions for TypeScript
 export interface Database {

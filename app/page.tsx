@@ -27,7 +27,7 @@ export default function Home() {
               <Button size="lg" asChild className="bg-white text-blue-600 hover:bg-gray-100">
                 <Link href="/products">Shop Now</Link>
               </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
+              <Button size="lg" variant="outline" asChild className="border-white text-white hover:bg-white hover:text-blue-600">
                 <Link href="/about">Learn More</Link>
               </Button>
             </div>
@@ -220,10 +220,10 @@ export default function Home() {
             Browse our collection of 3D printed products or contact us for custom orders.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
+            <Button size="lg" variant="outline" asChild className="border-white text-white hover:bg-white hover:text-blue-600">
               <Link href="/products">Shop Products</Link>
             </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
+            <Button size="lg" variant="outline" asChild className="border-white text-white hover:bg-white hover:text-blue-600">
               <Link href="/contact">Contact Us</Link>
             </Button>
           </div>
