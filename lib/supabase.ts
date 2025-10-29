@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { logger } from './logger'
 
 // Environment validation
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
@@ -35,12 +36,18 @@ export function isSupabaseConfigured(): boolean {
 
 // Utility function to get configuration status
 export function getConfigStatus() {
-  return {
+  const status = {
     isDemoMode,
     hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
     hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
   }
+  if (isDemoMode) {
+    logger.warn('Supabase is running in demo mode. Please configure environment variables for full functionality.', status)
+  } else {
+    logger.info('Supabase is configured and running.', status)
+  }
+  return status
 }
 
 // Database type definitions for TypeScript

@@ -264,6 +264,7 @@ export default function Home() {
                 <li><Link href="/newsletter" className="hover:text-white">Newsletter</Link></li>
                 <li><Link href="/social" className="hover:text-white">Social Media</Link></li>
                 <li><Link href="/blog" className="hover:text-white">Blog</Link></li>
+                <li><Link href="/admin-setup" className="hover:text-white text-xs">Admin Setup</Link></li>
               </ul>
             </div>
           </div>

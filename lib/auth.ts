@@ -1,7 +1,7 @@
 import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { supabaseAdmin, isDemoMode } from './supabase'
-import bcrypt from 'bcryptjs'
+import { localDb } from './local-db'
+import { logger } from './logger'
 
 // Type definitions for better type safety
 interface User {
@@ -9,7 +9,6 @@ interface User {
   email: string
   name: string | null
   role: 'customer' | 'admin'
-  password_hash: string | null
 }
 
 interface AuthResult {
@@ -19,8 +18,16 @@ interface AuthResult {
   role: 'customer' | 'admin'
 }
 
-// NextAuth configuration for authentication
-// This handles both customer and admin login with role-based access
+// Admin setup configuration
+const ADMIN_SETUP_CONFIG = {
+  // Special admin password for initial setup
+  ADMIN_SETUP_PASSWORD: 'AdminSetup2025!',
+  // Check if admin account exists
+  async hasAdminAccount(): Promise<boolean> {
+    return await localDb.hasAdminAccount()
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -31,103 +38,55 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials): Promise<AuthResult | null> {
         if (!credentials?.email || !credentials?.password) {
-          console.warn('Missing credentials')
+          logger.warn('Authentication attempt with missing credentials')
           return null
         }
 
         try {
-          // Check if Supabase is properly configured
-          if (isDemoMode) {
-            console.warn('Supabase not configured - using demo mode')
-            
-            // Demo mode: Customer user
-            if (credentials.email === 'demo@example.com' && credentials.password === 'password123') {
-              return {
-                id: 'demo-user-id',
-                email: 'demo@example.com',
-                name: 'Demo User',
-                role: 'customer' as const,
-              }
-            }
-            
-            // Demo mode: Admin user
-            if (credentials.email === 'admin@example.com' && credentials.password === 'admin123') {
-              return {
-                id: 'demo-admin-id',
-                email: 'admin@example.com',
-                name: 'Admin User',
-                role: 'admin' as const,
-              }
-            }
-            
-            console.warn('Invalid demo credentials')
-            return null
-          }
-
-          // Query user from database using admin client (has elevated permissions)
-          const { data: user, error } = await supabaseAdmin
-            .from('users')
-            .select('*')
-            .eq('email', credentials.email)
-            .single()
-
-          if (error) {
-            console.error('Database error:', error.message)
-            return null
-          }
-
+          // Use local database for authentication
+          const user = await localDb.findUserByEmail(credentials.email)
+          
           if (!user) {
-            console.warn('User not found:', credentials.email)
+            logger.warn('Authentication attempt for non-existent user', { email: credentials.email })
             return null
           }
 
-          // Verify password using bcrypt
-          if (!user.password_hash) {
-            console.error('User has no password hash:', credentials.email)
-            return null
-          }
-
-          const isPasswordValid = await bcrypt.compare(credentials.password, user.password_hash)
+          const isPasswordValid = await localDb.verifyPassword(credentials.password, user.password_hash)
 
           if (!isPasswordValid) {
-            console.warn('Invalid password for user:', credentials.email)
+            logger.warn('Invalid password attempt', { email: credentials.email })
             return null
           }
 
-          // Return user object that will be available in session
+          logger.info('Successful authentication', { email: credentials.email, userId: user.id, role: user.role })
+
           return {
             id: user.id,
             email: user.email,
             name: user.name,
             role: user.role,
           }
+
         } catch (error) {
-          console.error('Auth error:', error instanceof Error ? error.message : 'Unknown error')
+          logger.error('Unexpected error during authentication', error as Error, { email: credentials.email })
           return null
         }
       }
     })
   ],
-  
-  // Session configuration
   session: {
-    strategy: 'jwt', // Use JWT tokens instead of database sessions
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60,
   },
-  
-  // JWT configuration
   callbacks: {
     async jwt({ token, user }) {
-      // Add user role to JWT token
       if (user) {
         token.role = user.role
         token.id = user.id
       }
       return token
     },
-    
     async session({ session, token }) {
-      // Add role and id to session object
       if (token) {
         session.user.id = token.id as string
         session.user.role = token.role as 'customer' | 'admin'
@@ -135,35 +94,115 @@ export const authOptions: NextAuthOptions = {
       return session
     }
   },
-  
-  // Pages configuration
   pages: {
-    signIn: '/login', // Custom login page
-    // Note: NextAuth doesn't have a signUp page option
-    // Registration is handled by our custom /register page
+    signIn: '/login',
   },
-  
-  // Security configuration
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-key',
 }
 
-// Helper function to hash passwords during registration
 export async function hashPassword(password: string): Promise<string> {
-  const saltRounds = 12 // Higher salt rounds = more secure but slower
+  const bcrypt = await import('bcryptjs')
+  const saltRounds = 12
   return await bcrypt.hash(password, saltRounds)
 }
 
-// Helper function to verify passwords
 export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+  const bcrypt = await import('bcryptjs')
   return await bcrypt.compare(password, hashedPassword)
 }
 
-// Middleware helper to check if user is admin
-export function isAdmin(session: any): boolean {
-  return session?.user?.role === 'admin'
+interface CreateUserParams {
+  name: string
+  email: string
+  password: string
+  role: 'customer' | 'admin'
 }
 
-// Middleware helper to check if user is authenticated
-export function isAuthenticated(session: any): boolean {
-  return !!session?.user
+export async function createAdminUser({ name, email, password, role }: CreateUserParams): Promise<{ user: AuthResult | null; error: string | null }> {
+  try {
+    const { user, error } = await localDb.createUser({ name, email, password, role })
+
+    if (error) {
+      logger.error('Admin user creation failed', new Error(error), { email, role })
+      return { user: null, error }
+    }
+
+    logger.info('Admin user created successfully', { userId: user?.id, email: user?.email, role: user?.role })
+    return {
+      user: user ? {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      } : null,
+      error: null,
+    }
+  } catch (error) {
+    logger.error('Unexpected error during admin user creation', error as Error, { email, role })
+    return { user: null, error: (error as Error).message || 'An unexpected error occurred' }
+  }
+}
+
+export async function createUser({ name, email, password, role }: CreateUserParams): Promise<{ user: AuthResult | null; error: string | null }> {
+  try {
+    const { user, error } = await localDb.createUser({ name, email, password, role })
+
+    if (error) {
+      logger.error('User creation failed', new Error(error), { email, role })
+      return { user: null, error }
+    }
+
+    logger.info('User created successfully', { userId: user?.id, email: user?.email, role: user?.role })
+    return {
+      user: user ? {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      } : null,
+      error: null,
+    }
+  } catch (error) {
+    logger.error('Unexpected error during user creation', error as Error, { email, role })
+    return { user: null, error: (error as Error).message || 'An unexpected error occurred' }
+  }
+}
+
+// Admin account creation utilities
+export async function createAdminAccount(email: string, password: string, name: string, adminSetupPassword: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Check if admin account already exists
+    const hasAdmin = await localDb.hasAdminAccount()
+    if (hasAdmin) {
+      return { success: false, error: 'Admin account already exists' }
+    }
+
+    // Validate admin setup password
+    if (adminSetupPassword !== ADMIN_SETUP_CONFIG.ADMIN_SETUP_PASSWORD) {
+      return { success: false, error: 'Invalid admin setup password. Please use: AdminSetup2025!' }
+    }
+
+    // Create the admin account using local database
+    const { user, error } = await localDb.createUser({
+      email,
+      name,
+      password,
+      role: 'admin'
+    })
+
+    if (error) {
+      logger.error('Admin account creation failed', new Error(error), { email, name })
+      return { success: false, error }
+    }
+
+    logger.info('Admin account created successfully', { email, name, userId: user?.id })
+    return { success: true }
+  } catch (error) {
+    logger.error('Unexpected error during admin account creation', error as Error, { email, name })
+    return { success: false, error: 'An unexpected error occurred' }
+  }
+}
+
+export function getAdminSetupPassword(): string {
+  return ADMIN_SETUP_CONFIG.ADMIN_SETUP_PASSWORD
 }

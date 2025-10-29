@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createUser } from '@/lib/auth'
+import { createAdminAccount } from '@/lib/auth'
 import { logger } from '@/lib/logger'
 import { z } from 'zod'
 
-// Validation schema for user registration
-const registerSchema = z.object({
+// Validation schema for admin creation
+const adminCreationSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100).trim(),
   email: z.string().email('Invalid email address').max(255).trim(),
   password: z
@@ -15,6 +15,7 @@ const registerSchema = z.object({
     .regex(/[0-9]/, 'Password must contain at least one number')
     .regex(/[^a-zA-Z0-9]/, 'Password must contain at least one special character')
     .max(100),
+  adminSetupPassword: z.string().min(1, 'Admin setup password is required'),
 })
 
 export async function POST(request: NextRequest) {
@@ -22,50 +23,48 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     
     // Validate the request body
-    const validatedData = registerSchema.parse(body)
+    const validatedData = adminCreationSchema.parse(body)
     
-    logger.info('User registration attempt', { 
+    logger.info('Admin account creation attempt', { 
       email: validatedData.email, 
       name: validatedData.name 
     })
 
-    // Create the user account
-    const { user, error } = await createUser({
-      name: validatedData.name,
-      email: validatedData.email,
-      password: validatedData.password,
-      role: 'customer'
-    })
+    // Create the admin account
+    const result = await createAdminAccount(
+      validatedData.email,
+      validatedData.password,
+      validatedData.name,
+      validatedData.adminSetupPassword
+    )
 
-    if (error) {
-      logger.warn('User registration failed', { 
+    if (!result.success) {
+      logger.warn('Admin account creation failed', { 
         email: validatedData.email, 
-        error 
+        error: result.error 
       })
       return NextResponse.json(
-        { error },
+        { error: result.error },
         { status: 400 }
       )
     }
 
-    logger.info('User account created successfully', { 
+    logger.info('Admin account created successfully', { 
       email: validatedData.email, 
-      name: validatedData.name,
-      userId: user?.id
+      name: validatedData.name 
     })
 
     return NextResponse.json(
       { 
-        message: 'Account created successfully',
+        message: 'Admin account created successfully',
         email: validatedData.email,
-        name: validatedData.name,
-        userId: user?.id
+        name: validatedData.name
       },
       { status: 201 }
     )
 
   } catch (error) {
-    logger.error('Registration API error', error as Error, {})
+    logger.error('Admin creation API error', error as Error, {})
     
     if (error instanceof z.ZodError) {
       const firstError = error.issues[0]

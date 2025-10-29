@@ -1,17 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { User, Mail, Lock, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react'
+import { Shield, Lock, User, Mail, CheckCircle, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
-export default function RegisterPage() {
+export default function AdminSetupPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -19,6 +18,7 @@ export default function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
+    adminSetupPassword: '', // Special password for admin setup
   })
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
 
@@ -74,6 +74,13 @@ export default function RegisterPage() {
       newErrors.confirmPassword = 'Passwords do not match'
     }
 
+    // Admin setup password validation
+    if (!formData.adminSetupPassword) {
+      newErrors.adminSetupPassword = 'Admin setup password is required'
+    } else if (formData.adminSetupPassword !== 'AdminSetup2025!') {
+      newErrors.adminSetupPassword = 'Please use: AdminSetup2025!'
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -89,7 +96,7 @@ export default function RegisterPage() {
     setLoading(true)
 
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch('/api/auth/create-admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -98,23 +105,24 @@ export default function RegisterPage() {
           name: formData.name.trim(),
           email: formData.email.trim().toLowerCase(),
           password: formData.password,
+          adminSetupPassword: formData.adminSetupPassword,
         }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create account')
+        throw new Error(data.error || 'Failed to create admin account')
       }
 
-      toast.success('Account created successfully! Please log in.')
+      toast.success('Admin account created successfully!')
       
       // Redirect to login page
-      router.push('/login?message=account-created')
+      router.push('/login?message=admin-created')
 
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to create account')
-      console.error('Registration error:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to create admin account')
+      console.error('Admin creation error:', error)
     } finally {
       setLoading(false)
     }
@@ -126,16 +134,39 @@ export default function RegisterPage() {
         <Card className="shadow-xl">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-              <User className="h-6 w-6 text-blue-600" />
+              <Shield className="h-6 w-6 text-blue-600" />
             </div>
-            <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
+            <CardTitle className="text-2xl font-bold">Admin Account Setup</CardTitle>
             <CardDescription>
-              Join our 3D Print Shop community
+              Create the first admin account for your 3D Print Shop
             </CardDescription>
           </CardHeader>
           
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Admin Setup Password */}
+              <div className="space-y-2">
+                <Label htmlFor="adminSetupPassword" className="flex items-center space-x-2">
+                  <Lock className="h-4 w-4" />
+                  <span>Admin Setup Password</span>
+                </Label>
+                <Input
+                  id="adminSetupPassword"
+                  name="adminSetupPassword"
+                  type="password"
+                  value={formData.adminSetupPassword}
+                  onChange={handleInputChange}
+                  placeholder="Enter admin setup password"
+                  className={errors.adminSetupPassword ? 'border-red-500' : ''}
+                />
+                {errors.adminSetupPassword && (
+                  <p className="text-sm text-red-600">{errors.adminSetupPassword}</p>
+                )}
+                <p className="text-xs text-gray-500">
+                  Admin setup password: <code className="bg-gray-100 px-1 rounded">AdminSetup2025!</code>
+                </p>
+              </div>
+
               {/* Name */}
               <div className="space-y-2">
                 <Label htmlFor="name" className="flex items-center space-x-2">
@@ -168,7 +199,7 @@ export default function RegisterPage() {
                   type="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  placeholder="your@email.com"
+                  placeholder="admin@yourcompany.com"
                   className={errors.email ? 'border-red-500' : ''}
                 />
                 {errors.email && (
@@ -178,10 +209,7 @@ export default function RegisterPage() {
 
               {/* Password */}
               <div className="space-y-2">
-                <Label htmlFor="password" className="flex items-center space-x-2">
-                  <Lock className="h-4 w-4" />
-                  <span>Password</span>
-                </Label>
+                <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
                   name="password"
@@ -232,6 +260,15 @@ export default function RegisterPage() {
                 )}
               </div>
 
+              {/* Security Notice */}
+              <Alert>
+                <Shield className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Security Notice:</strong> This admin account will have full access to manage products, 
+                  orders, and customer data. Keep your credentials secure.
+                </AlertDescription>
+              </Alert>
+
               {/* Submit Button */}
               <Button 
                 type="submit" 
@@ -239,26 +276,18 @@ export default function RegisterPage() {
                 className="w-full"
                 size="lg"
               >
-                {loading ? 'Creating Account...' : 'Create Account'}
+                {loading ? 'Creating Admin Account...' : 'Create Admin Account'}
               </Button>
             </form>
 
-            {/* Login Link */}
-            <div className="mt-6 text-center space-y-2">
-              <p className="text-sm text-gray-600">
-                Already have an account?{' '}
-                <Link href="/login" className="text-blue-600 hover:underline font-medium">
-                  Sign in
-                </Link>
-              </p>
-              
+            {/* Back to Login */}
+            <div className="mt-6 text-center">
               <Button 
                 variant="ghost" 
-                onClick={() => router.push('/')}
+                onClick={() => router.push('/login')}
                 className="text-sm"
               >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Home
+                ← Back to Login
               </Button>
             </div>
           </CardContent>
