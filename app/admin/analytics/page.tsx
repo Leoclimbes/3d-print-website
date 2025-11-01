@@ -14,58 +14,70 @@ import {
   Download
 } from 'lucide-react'
 
-export default function AnalyticsPage() {
-  // Mock analytics data
-  const analyticsData = {
-    revenue: {
-      current: 12450.75,
-      previous: 10890.25,
-      change: 14.3,
-      trend: 'up' as const
-    },
-    orders: {
-      current: 156,
-      previous: 142,
-      change: 9.9,
-      trend: 'up' as const
-    },
-    customers: {
-      current: 89,
-      previous: 76,
-      change: 17.1,
-      trend: 'up' as const
-    },
-    products: {
-      current: 45,
-      previous: 42,
-      change: 7.1,
-      trend: 'up' as const
-    }
+// ============================================================================
+// MOCK DATA - Defined at module level (outside component)
+// ============================================================================
+// WHY: These data objects are created once when the module loads, not on every render.
+// This prevents unnecessary object recreation on every component re-render, improving performance.
+// React components re-render frequently (on state changes, prop updates, etc.), so moving
+// static mock data outside the component ensures it's only created once.
+
+// Main analytics metrics with trends and comparisons
+const analyticsData = {
+  revenue: {
+    current: 12450.75,
+    previous: 10890.25,
+    change: 14.3,
+    trend: 'up' as const  // 'as const' makes TypeScript treat 'up' as literal type, not string
+  },
+  orders: {
+    current: 156,
+    previous: 142,
+    change: 9.9,
+    trend: 'up' as const
+  },
+  customers: {
+    current: 89,
+    previous: 76,
+    change: 17.1,
+    trend: 'up' as const
+  },
+  products: {
+    current: 45,
+    previous: 42,
+    change: 7.1,
+    trend: 'up' as const
   }
+}
 
-  const topSellingProducts = [
-    { name: 'Custom Phone Stand', sales: 45, revenue: 584.55, growth: 12.5 },
-    { name: 'Dragon Figurine', sales: 32, revenue: 799.68, growth: 8.3 },
-    { name: 'Cable Tray', sales: 28, revenue: 531.72, growth: 15.2 },
-    { name: 'Gaming Keycap Set', sales: 24, revenue: 359.76, growth: 22.1 },
-    { name: 'Desk Organizer', sales: 21, revenue: 315.21, growth: 5.7 }
-  ]
+// Top selling products with sales numbers and growth metrics
+const topSellingProducts = [
+  { name: 'Custom Phone Stand', sales: 45, revenue: 584.55, growth: 12.5 },
+  { name: 'Dragon Figurine', sales: 32, revenue: 799.68, growth: 8.3 },
+  { name: 'Cable Tray', sales: 28, revenue: 531.72, growth: 15.2 },
+  { name: 'Gaming Keycap Set', sales: 24, revenue: 359.76, growth: 22.1 },
+  { name: 'Desk Organizer', sales: 21, revenue: 315.21, growth: 5.7 }
+]
 
-  const monthlyRevenue = [
-    { month: 'Jan', revenue: 8500 },
-    { month: 'Feb', revenue: 9200 },
-    { month: 'Mar', revenue: 10800 },
-    { month: 'Apr', revenue: 11200 },
-    { month: 'May', revenue: 12450 },
-    { month: 'Jun', revenue: 13100 }
-  ]
+// Monthly revenue data for chart visualization (currently placeholder)
+const monthlyRevenue = [
+  { month: 'Jan', revenue: 8500 },
+  { month: 'Feb', revenue: 9200 },
+  { month: 'Mar', revenue: 10800 },
+  { month: 'Apr', revenue: 11200 },
+  { month: 'May', revenue: 12450 },
+  { month: 'Jun', revenue: 13100 }
+]
 
-  const orderStatusDistribution = [
-    { status: 'Completed', count: 89, percentage: 57.1 },
-    { status: 'Processing', count: 34, percentage: 21.8 },
-    { status: 'Shipped', count: 23, percentage: 14.7 },
-    { status: 'Pending', count: 10, percentage: 6.4 }
-  ]
+// Order status breakdown showing distribution of orders by status
+const orderStatusDistribution = [
+  { status: 'Completed', count: 89, percentage: 57.1 },
+  { status: 'Processing', count: 34, percentage: 21.8 },
+  { status: 'Shipped', count: 23, percentage: 14.7 },
+  { status: 'Pending', count: 10, percentage: 6.4 }
+]
+
+export default function AnalyticsPage() {
 
   return (
     <div className="p-6">

@@ -24,10 +24,10 @@ export default function Home() {
               From toys to tools, we create custom items tailored to your needs.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild className="bg-white text-blue-600 hover:bg-gray-100">
+              <Button size="lg" asChild className="bg-white text-blue-600">
                 <Link href="/products">Shop Now</Link>
               </Button>
-              <Button size="lg" variant="outline" asChild className="border-white text-white hover:bg-white hover:text-blue-600">
+              <Button size="lg" variant="outline" asChild className="border-white text-white bg-white text-blue-600">
                 <Link href="/about">Learn More</Link>
               </Button>
             </div>
@@ -220,10 +220,10 @@ export default function Home() {
             Browse our collection of 3D printed products or contact us for custom orders.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="outline" asChild className="border-white text-white hover:bg-white hover:text-blue-600">
+            <Button size="lg" variant="outline" asChild className="border-white text-white bg-white text-blue-600">
               <Link href="/products">Shop Products</Link>
             </Button>
-            <Button size="lg" variant="outline" asChild className="border-white text-white hover:bg-white hover:text-blue-600">
+            <Button size="lg" variant="outline" asChild className="border-white text-white bg-white text-blue-600">
               <Link href="/contact">Contact Us</Link>
             </Button>
           </div>
@@ -243,28 +243,28 @@ export default function Home() {
             <div>
               <h4 className="font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/products" className="hover:text-white">Products</Link></li>
-                <li><Link href="/categories" className="hover:text-white">Categories</Link></li>
-                <li><Link href="/about" className="hover:text-white">About</Link></li>
-                <li><Link href="/contact" className="hover:text-white">Contact</Link></li>
+                <li><Link href="/products" className="text-white">Products</Link></li>
+                <li><Link href="/categories" className="text-white">Categories</Link></li>
+                <li><Link href="/about" className="text-white">About</Link></li>
+                <li><Link href="/contact" className="text-white">Contact</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">Customer Service</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/shipping" className="hover:text-white">Shipping Info</Link></li>
-                <li><Link href="/returns" className="hover:text-white">Returns</Link></li>
-                <li><Link href="/faq" className="hover:text-white">FAQ</Link></li>
-                <li><Link href="/support" className="hover:text-white">Support</Link></li>
+                <li><Link href="/shipping" className="text-white">Shipping Info</Link></li>
+                <li><Link href="/returns" className="text-white">Returns</Link></li>
+                <li><Link href="/faq" className="text-white">FAQ</Link></li>
+                <li><Link href="/support" className="text-white">Support</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">Connect</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/newsletter" className="hover:text-white">Newsletter</Link></li>
-                <li><Link href="/social" className="hover:text-white">Social Media</Link></li>
-                <li><Link href="/blog" className="hover:text-white">Blog</Link></li>
-                <li><Link href="/admin-setup" className="hover:text-white text-xs">Admin Setup</Link></li>
+                <li><Link href="/newsletter" className="text-white">Newsletter</Link></li>
+                <li><Link href="/social" className="text-white">Social Media</Link></li>
+                <li><Link href="/blog" className="text-white">Blog</Link></li>
+                <li><Link href="/admin-setup" className="text-white text-xs">Admin Setup</Link></li>
               </ul>
             </div>
           </div>
