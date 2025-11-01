@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { 
@@ -32,6 +33,13 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 export default function AdminDashboard() {
+  // ============================================================================
+  // ROUTER SETUP - Navigation handling
+  // ============================================================================
+  // WHY: useRouter hook from Next.js allows programmatic navigation in client components
+  // This lets us navigate to different pages when users click the quick action buttons
+  const router = useRouter()
+
   // ============================================================================
   // MOCK SALES DATA - Last 7 days of revenue
   // ============================================================================
@@ -170,12 +178,117 @@ export default function AdminDashboard() {
     }
   }
 
+  // ============================================================================
+  // QUICK ACTION HANDLERS - Navigation functions
+  // ============================================================================
+  // WHY: These functions handle clicks on quick action buttons and navigate to appropriate pages
+  // Each function uses router.push() to navigate to a different admin section
+
+  // Handle "Add Product" button click
+  // WHY: Navigates to the product creation page when admin wants to add a new product
+  const handleAddProduct = () => {
+    router.push('/admin/products/new')
+  }
+
+  // Handle "Export Data" button click
+  // WHY: Triggers data export functionality (could download CSV, JSON, or PDF report)
+  // For now, this shows an alert - in production, this would call an API endpoint to generate/download report
+  const handleExportData = () => {
+    // TODO: In production, this would fetch data and trigger download
+    // Example: fetch('/api/admin/export', { method: 'POST' }) then create download
+    alert('Export functionality will download your dashboard data as CSV/PDF.\nThis feature will be implemented soon!')
+    // Future implementation:
+    // const response = await fetch('/api/admin/export')
+    // const blob = await response.blob()
+    // const url = window.URL.createObjectURL(blob)
+    // const a = document.createElement('a')
+    // a.href = url
+    // a.download = `dashboard-export-${new Date().toISOString()}.csv`
+    // a.click()
+  }
+
+  // Handle "View Customers" button click
+  // WHY: Navigates to the customer management page to view and manage all customers
+  const handleViewCustomers = () => {
+    router.push('/admin/customers')
+  }
+
+  // Handle "Settings" button click
+  // WHY: Navigates to the admin settings page where shop configuration can be managed
+  const handleSettings = () => {
+    router.push('/admin/settings')
+  }
+
   return (
     <div className="p-0">
       {/* Header */}
       <div className="px-6 pt-6 mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600 mt-2">Welcome back! Here's what's happening with your 3D print shop.</p>
+      </div>
+
+      {/* Quick Actions - Moved to top for easy access */}
+      {/* WHY: Quick actions should be prominently placed so admins can quickly navigate to common tasks */}
+      <div className="px-6 mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Plus className="h-5 w-5" />
+              <span>Quick Actions</span>
+            </CardTitle>
+            <CardDescription>Common administrative tasks</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Grid layout: 2 columns on mobile, 4 columns on medium+ screens */}
+            {/* WHY: Responsive design ensures buttons look good on all device sizes */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Add Product Button */}
+              {/* WHY: onClick handler triggers navigation to product creation page */}
+              {/* className includes hover states for visual feedback when user hovers */}
+              <button 
+                onClick={handleAddProduct}
+                className="p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors text-left cursor-pointer"
+              >
+                <Package className="h-6 w-6 text-blue-600 mb-2" />
+                <p className="font-medium text-sm">Add Product</p>
+                <p className="text-xs text-gray-500">Create new item</p>
+              </button>
+              
+              {/* Export Data Button */}
+              {/* WHY: onClick handler triggers data export functionality */}
+              <button 
+                onClick={handleExportData}
+                className="p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-left cursor-pointer"
+              >
+                <Download className="h-6 w-6 text-green-600 mb-2" />
+                <p className="font-medium text-sm">Export Data</p>
+                <p className="text-xs text-gray-500">Download reports</p>
+              </button>
+              
+              {/* View Customers Button */}
+              {/* WHY: onClick handler navigates to customer management page */}
+              <button 
+                onClick={handleViewCustomers}
+                className="p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors text-left cursor-pointer"
+              >
+                <Users className="h-6 w-6 text-purple-600 mb-2" />
+                <p className="font-medium text-sm">View Customers</p>
+                <p className="text-xs text-gray-500">Manage users</p>
+              </button>
+              
+              {/* Settings Button */}
+              {/* WHY: onClick handler navigates to admin settings page */}
+              <button 
+                onClick={handleSettings}
+                className="p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors text-left cursor-pointer"
+              >
+                <Settings className="h-6 w-6 text-orange-600 mb-2" />
+                <p className="font-medium text-sm">Settings</p>
+                <p className="text-xs text-gray-500">Configure shop</p>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Enhanced Stats Grid */}
@@ -412,43 +525,6 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
-      </div>
-
-      {/* Enhanced Quick Actions */}
-      <div className="px-6 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Plus className="h-5 w-5" />
-              <span>Quick Actions</span>
-            </CardTitle>
-            <CardDescription>Common administrative tasks</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <button className="p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors text-left">
-                <Package className="h-6 w-6 text-blue-600 mb-2" />
-                <p className="font-medium text-sm">Add Product</p>
-                <p className="text-xs text-gray-500">Create new item</p>
-              </button>
-              <button className="p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-left">
-                <Download className="h-6 w-6 text-green-600 mb-2" />
-                <p className="font-medium text-sm">Export Data</p>
-                <p className="text-xs text-gray-500">Download reports</p>
-              </button>
-              <button className="p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors text-left">
-                <Users className="h-6 w-6 text-purple-600 mb-2" />
-                <p className="font-medium text-sm">View Customers</p>
-                <p className="text-xs text-gray-500">Manage users</p>
-              </button>
-              <button className="p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors text-left">
-                <Settings className="h-6 w-6 text-orange-600 mb-2" />
-                <p className="font-medium text-sm">Settings</p>
-                <p className="text-xs text-gray-500">Configure shop</p>
-              </button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )
