@@ -11,5 +11,18 @@
     "stock": 1,
     "createdAt": "2025-11-01T00:43:25.888Z",
     "updatedAt": "2025-11-01T00:43:25.888Z"
+  },
+  {
+    "id": "2",
+    "name": "eee",
+    "description": "ee",
+    "price": 1,
+    "category": "Office",
+    "images": [
+      "/uploads/products/images-1761957951288-ycj1zvq.jpeg"
+    ],
+    "stock": 1,
+    "createdAt": "2025-11-01T00:45:52.323Z",
+    "updatedAt": "2025-11-01T00:45:52.323Z"
   }
 ]

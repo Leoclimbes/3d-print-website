@@ -20,9 +20,37 @@ import {
   AlertCircle,
   Settings
 } from 'lucide-react'
+// Recharts imports for creating sales chart visualization
+// WHY: Recharts is a composable charting library for React that works well with TypeScript
+// LineChart: Container component that sets up the coordinate system for line graphs
+// Line: Component that draws the actual line connecting data points
+// XAxis: Component for rendering labels/scale on horizontal (X) axis
+// YAxis: Component for rendering labels/scale on vertical (Y) axis
+// CartesianGrid: Draws grid lines on the chart for easier reading
+// Tooltip: Shows data values when user hovers over chart points
+// ResponsiveContainer: Makes chart automatically resize to fit parent container
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 export default function AdminDashboard() {
-  // Mock data for the dashboard
+  // ============================================================================
+  // MOCK SALES DATA - Last 7 days of revenue
+  // ============================================================================
+  // WHY: This data simulates daily sales revenue for the past week
+  // Format: { day: string, revenue: number } - matches recharts LineChart data format
+  // This would typically come from your backend API, but for now we use static mock data
+  const salesData = [
+    { day: 'Mon', revenue: 1850 },   // Monday's revenue
+    { day: 'Tue', revenue: 2120 },   // Tuesday's revenue
+    { day: 'Wed', revenue: 1980 },   // Wednesday's revenue
+    { day: 'Thu', revenue: 2340 },   // Thursday's revenue (higher sales day)
+    { day: 'Fri', revenue: 2890 },   // Friday's revenue (weekend shopping starts)
+    { day: 'Sat', revenue: 3120 },   // Saturday's revenue (peak day)
+    { day: 'Sun', revenue: 2650 }    // Sunday's revenue
+  ]
+
+  // ============================================================================
+  // MOCK DATA FOR THE DASHBOARD
+  // ============================================================================
   const stats = [
     {
       title: 'Total Revenue',
@@ -200,13 +228,78 @@ export default function AdminDashboard() {
               <CardDescription>Revenue trends for the last 7 days</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-                <div className="text-center">
-                  <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500">Sales chart will be implemented here</p>
-                  <p className="text-sm text-gray-400">Integration with charting library needed</p>
-                </div>
-              </div>
+              {/* ResponsiveContainer: Automatically adjusts chart size to fit parent */}
+              {/* WHY: Ensures chart looks good on all screen sizes (mobile, tablet, desktop) */}
+              {/* height="100%" with parent h-64 (256px) creates consistent chart height */}
+              <ResponsiveContainer width="100%" height={256}>
+                {/* LineChart: Main container for line graph visualization */}
+                {/* WHY: Line charts are perfect for showing trends over time (days in this case) */}
+                {/* data={salesData}: Provides the data points to plot on the chart */}
+                {/* margin: Adds padding inside chart area so labels don't get cut off */}
+                <LineChart
+                  data={salesData}
+                  margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                >
+                  {/* CartesianGrid: Draws grid lines behind the chart */}
+                  {/* WHY: Grid lines help users read exact values from the chart more easily */}
+                  {/* strokeDasharray="3 3": Creates dashed lines (3px dash, 3px gap) for subtle appearance */}
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  
+                  {/* XAxis: Horizontal axis showing day labels (Mon, Tue, Wed, etc.) */}
+                  {/* WHY: X-axis typically shows the time/category dimension */}
+                  {/* dataKey="day": Tells XAxis to use the "day" property from salesData objects */}
+                  {/* stroke="#6b7280": Gray color for axis line matching design system */}
+                  <XAxis 
+                    dataKey="day" 
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                  />
+                  
+                  {/* YAxis: Vertical axis showing revenue values */}
+                  {/* WHY: Y-axis shows the numeric values (revenue amounts) */}
+                  {/* stroke="#6b7280": Matches X-axis styling for consistency */}
+                  {/* tickFormatter: Formats numbers with $ sign and comma separators */}
+                  {/* WHY: Makes revenue amounts more readable (e.g., "$2,000" instead of "2000") */}
+                  <YAxis 
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                    tickFormatter={(value) => `$${(value / 1000).toFixed(1)}k`}
+                  />
+                  
+                  {/* Tooltip: Popup that appears when hovering over data points */}
+                  {/* WHY: Users can see exact values by hovering over the line */}
+                  {/* contentStyle: Styles the tooltip box */}
+                  {/* formatter: Customizes how values are displayed in tooltip */}
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      padding: '8px'
+                    }}
+                    formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                    labelStyle={{ color: '#374151', fontWeight: 600 }}
+                  />
+                  
+                  {/* Line: The actual line that connects data points */}
+                  {/* WHY: Visual representation of how revenue changes day by day */}
+                  {/* type="monotone": Creates smooth curves instead of sharp angles */}
+                  {/* dataKey="revenue": Uses "revenue" property from salesData for Y-axis values */}
+                  {/* stroke="#2563eb": Blue color matching the design system */}
+                  {/* strokeWidth={2}: Makes line slightly thicker for better visibility */}
+                  {/* dot: Shows small circles at each data point */}
+                  {/* activeDot: Larger circle appears when hovering over a point */}
+                  {/* WHY: Visual feedback helps users identify specific data points */}
+                  <Line 
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="#2563eb" 
+                    strokeWidth={2}
+                    dot={{ fill: '#2563eb', r: 4 }}
+                    activeDot={{ r: 6, fill: '#1d4ed8' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
 

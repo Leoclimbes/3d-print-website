@@ -223,36 +223,39 @@ export default function ProductsListPage() {
         {filteredProducts.map((product) => (
           <Card key={product.id} className="shadow-lg">
             <CardHeader>
-              {/* Product Image - Clickable to open modal */}
-              {/* WHY: Users should be able to click images to see them larger and browse gallery */}
-              <div 
-                className="aspect-square bg-gray-200 rounded-lg mb-4 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity relative group"
-                onClick={() => product.images && product.images.length > 0 && openImageModal(product.images, 0)}
-              >
-                {product.images && product.images.length > 0 ? (
-                  <>
-                    <img
-                      src={product.images[0]}
-                      alt={product.name}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                    {/* Show overlay hint on hover */}
-                    {/* WHY: Visual feedback that image is clickable */}
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
-                      <Eye className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+              {/* Product Image Square - Click to open modal */}
+              {/* WHY: Show only one image per product card in a square format */}
+              {product.images && product.images.length > 0 && product.images[0] ? (
+                <div 
+                  className="aspect-square bg-gray-100 rounded-lg mb-4 overflow-hidden cursor-pointer group relative"
+                  onClick={() => openImageModal(product.images, 0)}
+                >
+                  {/* Display the first product image */}
+                  {/* WHY: Show only the main product image, not all images */}
+                  <img
+                    src={product.images[0]}
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                  />
+                  {/* Show badge if there are more images */}
+                  {/* WHY: Indicate that clicking will show more images */}
+                  {product.images.length > 1 && (
+                    <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                      +{product.images.length - 1}
                     </div>
-                    {/* Show image count badge if multiple images */}
-                    {/* WHY: Users should know there are more images to view */}
-                    {product.images.length > 1 && (
-                      <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
-                        +{product.images.length - 1}
-                      </div>
-                    )}
-                  </>
-                ) : (
+                  )}
+                  {/* Hover overlay to show it's clickable */}
+                  {/* WHY: Visual feedback that the image is interactive */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                    <Eye className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </div>
+              ) : (
+                // No image placeholder
+                <div className="aspect-square bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
                   <span className="text-gray-500 text-sm">No Image</span>
-                )}
-              </div>
+                </div>
+              )}
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <CardTitle className="text-lg">{product.name}</CardTitle>
