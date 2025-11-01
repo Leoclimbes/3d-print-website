@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { logger } from './logger'
 
 // Simple file-based database for products (similar to local-db.ts for users)
 // WHY: We need a persistent storage solution so product changes (create, update, delete) persist across server restarts
@@ -80,12 +81,14 @@ class ProductsDatabase {
 
   // Load products from JSON file into memory
   // WHY: We need to read the latest product data from the file before performing operations
+  // CONCURRENCY NOTE: File-based DB has limitations with concurrent writes - consider a real DB for production
   private loadProducts() {
     try {
       const data = fs.readFileSync(PRODUCTS_FILE, 'utf8')
       this.products = JSON.parse(data)
     } catch (error) {
-      console.error('Error loading products:', error)
+      // Use logger instead of console.error for consistent logging
+      logger.error('Error loading products from file', error as Error, { file: PRODUCTS_FILE })
       // If file is corrupted or can't be read, start with empty array
       // WHY: Better to have no products than crash the entire app
       this.products = []
@@ -94,11 +97,18 @@ class ProductsDatabase {
 
   // Save products from memory to JSON file
   // WHY: We need to persist changes to disk so they survive server restarts
+  // CONCURRENCY NOTE: Multiple simultaneous saves could cause data loss - file locking would help
   private saveProducts() {
     try {
-      fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(this.products, null, 2))
+      // Write atomically by writing to a temp file first, then renaming
+      // WHY: This prevents corruption if the process crashes mid-write
+      // The rename operation is atomic on most file systems, so it's safer
+      const tempFile = `${PRODUCTS_FILE}.tmp`
+      fs.writeFileSync(tempFile, JSON.stringify(this.products, null, 2))
+      fs.renameSync(tempFile, PRODUCTS_FILE)
     } catch (error) {
-      console.error('Error saving products:', error)
+      // Use logger for consistent error reporting
+      logger.error('Error saving products to file', error as Error, { file: PRODUCTS_FILE })
       throw error // Re-throw so calling code knows save failed
     }
   }
@@ -139,15 +149,16 @@ class ProductsDatabase {
       : 1
     ).toString()
 
-    // Create the new product object
+    // Create the new product object with sanitized/normalized data
+    // WHY: Trim whitespace and ensure data consistency
     const newProduct: Product = {
       id: newId,
-      name: productData.name,
-      description: productData.description,
-      price: productData.price,
-      category: productData.category,
+      name: productData.name.trim(), // Remove leading/trailing whitespace
+      description: productData.description.trim(),
+      price: Math.max(0, productData.price), // Ensure price is not negative
+      category: productData.category.trim(),
       images: productData.images || ['/api/placeholder/300/300'],
-      stock: productData.stock ?? 0,
+      stock: Math.max(0, productData.stock ?? 0), // Ensure stock is not negative
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
@@ -156,6 +167,7 @@ class ProductsDatabase {
     this.products.push(newProduct)
     this.saveProducts()
 
+    logger.info('Product created successfully', { productId: newProduct.id, name: newProduct.name })
     return newProduct
   }
 
@@ -175,10 +187,24 @@ class ProductsDatabase {
 
     // Update the product (keep original ID and timestamps, but update updatedAt)
     // WHY: We don't want to allow changing the ID or createdAt timestamp
+    // Sanitize update data - trim strings, ensure numbers are valid
+    // WHY: Input sanitization prevents bad data from being saved (negative prices, etc.)
+    const sanitizedUpdates: Partial<Product> = {
+      // Only include fields that are actually provided in updates
+      // WHY: We don't want to overwrite fields with undefined/null values
+      ...(updates.name !== undefined && { name: String(updates.name).trim() }),
+      ...(updates.description !== undefined && { description: String(updates.description).trim() }),
+      ...(updates.price !== undefined && { price: Math.max(0, Number(updates.price)) }),
+      ...(updates.category !== undefined && { category: String(updates.category).trim() }),
+      ...(updates.images !== undefined && { images: updates.images }), // Keep images as-is if provided
+      ...(updates.stock !== undefined && { stock: Math.max(0, Number(updates.stock)) }),
+    }
+
     this.products[productIndex] = {
       ...this.products[productIndex],
-      ...updates,
-      id, // Ensure ID doesn't change
+      ...sanitizedUpdates,
+      id, // Ensure ID doesn't change (security measure)
+      createdAt: this.products[productIndex].createdAt, // Preserve original creation time
       updatedAt: new Date().toISOString() // Always update the updatedAt timestamp
     }
 
@@ -210,6 +236,7 @@ class ProductsDatabase {
     // WHY: Changes must be persisted to disk
     this.saveProducts()
 
+    logger.info('Product deleted successfully', { productId: id })
     return true // Success
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { uploadImageToLocal } from '@/lib/cloudinary'
+import { logger } from '@/lib/logger'
 
 // ============================================================================
 // POST /api/upload - Upload Images to Local Storage
@@ -101,14 +102,18 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         // If one file fails, log it and include in response
         // WHY: User should know which file failed, but other files might still succeed
-        console.error(`Error uploading file ${file.name}:`, error)
+        logger.error(`Error uploading file ${file.name}`, error as Error, { 
+          fileName: file.name, 
+          fileSize: file.size,
+          fileType: file.type 
+        })
         
         // Return error for this specific file
-        // WHY: User needs to know what went wrong
+        // WHY: User needs to know what went wrong, but don't expose internal error details
         return NextResponse.json(
           { 
             success: false, 
-            error: `Failed to upload ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}` 
+            error: `Failed to upload ${file.name}. Please check the file and try again.` 
           },
           { status: 500 }
         )
@@ -117,6 +122,11 @@ export async function POST(request: NextRequest) {
 
     // If we got here, all uploads succeeded
     // WHY: Return success with all uploaded image URLs
+    logger.info('Image upload successful', { 
+      fileCount: uploadResults.length,
+      adminId: session.user.id 
+    })
+    
     return NextResponse.json({
       success: true,
       data: uploadResults,
@@ -126,14 +136,14 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     // Catch any unexpected errors
     // WHY: Better error handling prevents crashes and gives useful feedback
-    console.error('Error in upload route:', error)
+    logger.error('Error in upload route', error as Error, {})
     
-    // Return detailed error message
-    // WHY: Helps with debugging and user feedback
+    // Return generic error message - don't expose internal details
+    // WHY: Helps with debugging via logs but doesn't leak info to potential attackers
     return NextResponse.json(
       { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Failed to upload images. Please try again.' 
+        error: 'Failed to upload images. Please try again.' 
       },
       { status: 500 }
     )

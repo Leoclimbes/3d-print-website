@@ -24,5 +24,18 @@
     "stock": 1,
     "createdAt": "2025-11-01T00:45:52.323Z",
     "updatedAt": "2025-11-01T00:45:52.323Z"
+  },
+  {
+    "id": "3",
+    "name": "w",
+    "description": "w",
+    "price": 0.01,
+    "category": "Office",
+    "images": [
+      "/uploads/products/dragonred-1761959238481-adx6bo0.webp"
+    ],
+    "stock": 1,
+    "createdAt": "2025-11-01T01:07:19.846Z",
+    "updatedAt": "2025-11-01T01:07:19.846Z"
   }
 ]

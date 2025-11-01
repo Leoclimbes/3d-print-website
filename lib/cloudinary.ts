@@ -8,6 +8,7 @@
 import fs from 'fs'
 import path from 'path'
 import { writeFile, mkdir } from 'fs/promises'
+import { logger } from './logger'
 
 // Base upload directory - where all uploaded images are stored
 // WHY: All images go into public/uploads so they're accessible via public URLs
@@ -98,10 +99,15 @@ export async function uploadImageToLocal(
   } catch (error) {
     // Log detailed error for debugging
     // WHY: If upload fails, we need to know why
-    console.error('Error uploading image:', error)
+    logger.error('Error uploading image to local storage', error as Error, { 
+      fileName: file.name, 
+      fileType: file.type,
+      folder 
+    })
     
     // Throw a user-friendly error message
     // WHY: The API route needs to return an error message to the frontend
+    // Don't expose internal error details to users
     throw new Error(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
@@ -126,7 +132,7 @@ export async function deleteImageFromLocal(imageUrl: string): Promise<void> {
   } catch (error) {
     // Log error but don't throw - deletion failure shouldn't break the app
     // WHY: If file deletion fails (maybe already deleted), it's not critical
-    console.error('Error deleting image:', error)
+    logger.warn('Error deleting image from local storage', error as Error, { imageUrl })
   }
 }
 

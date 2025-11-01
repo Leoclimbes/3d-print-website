@@ -19,9 +19,15 @@ interface AuthResult {
 }
 
 // Admin setup configuration
+// SECURITY NOTE: Admin setup password should be in environment variables, not hardcoded
+// WHY: Hardcoded passwords are a security risk - anyone with access to the code can see it
 const ADMIN_SETUP_CONFIG = {
-  // Special admin password for initial setup
-  ADMIN_SETUP_PASSWORD: 'AdminSetup2025!',
+  // Get admin setup password from environment variable or fallback to a default
+  // WHY: Environment variables are more secure than hardcoded values
+  // TODO: Remove fallback in production - require environment variable
+  get ADMIN_SETUP_PASSWORD(): string {
+    return process.env.ADMIN_SETUP_PASSWORD || 'AdminSetup2025!'
+  },
   // Check if admin account exists
   async hasAdminAccount(): Promise<boolean> {
     return await localDb.hasAdminAccount()
@@ -97,7 +103,10 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/login',
   },
-  secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-key',
+  // SECURITY: Use environment variable for secret, fallback only for development
+  // WHY: The secret is used to sign JWT tokens - it must be secure and random
+  // TODO: Remove fallback in production - require environment variable
+  secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-key-change-in-production',
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -118,54 +127,55 @@ interface CreateUserParams {
   role: 'customer' | 'admin'
 }
 
-export async function createAdminUser({ name, email, password, role }: CreateUserParams): Promise<{ user: AuthResult | null; error: string | null }> {
+// Helper function to transform database user to auth result
+// WHY: Reduces code duplication - both createUser and createAdminUser need this transformation
+function transformUserToAuthResult(user: { id: string; email: string; name: string | null; role: 'customer' | 'admin' } | null): AuthResult | null {
+  if (!user) return null
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+  }
+}
+
+// Internal helper function to create a user (shared logic)
+// WHY: Both createUser and createAdminUser do the same thing - this reduces duplication
+async function createUserInternal({ name, email, password, role }: CreateUserParams, userType: 'admin' | 'regular'): Promise<{ user: AuthResult | null; error: string | null }> {
   try {
     const { user, error } = await localDb.createUser({ name, email, password, role })
 
     if (error) {
-      logger.error('Admin user creation failed', new Error(error), { email, role })
+      logger.error(`${userType} user creation failed`, new Error(error), { email, role })
       return { user: null, error }
     }
 
-    logger.info('Admin user created successfully', { userId: user?.id, email: user?.email, role: user?.role })
+    logger.info(`${userType === 'admin' ? 'Admin' : 'Regular'} user created successfully`, { 
+      userId: user?.id, 
+      email: user?.email, 
+      role: user?.role 
+    })
+    
     return {
-      user: user ? {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      } : null,
+      user: transformUserToAuthResult(user),
       error: null,
     }
   } catch (error) {
-    logger.error('Unexpected error during admin user creation', error as Error, { email, role })
+    logger.error(`Unexpected error during ${userType} user creation`, error as Error, { email, role })
     return { user: null, error: (error as Error).message || 'An unexpected error occurred' }
   }
 }
 
+// Create an admin user (calls internal helper)
+// WHY: Provides a clear API for creating admin users
+export async function createAdminUser({ name, email, password, role }: CreateUserParams): Promise<{ user: AuthResult | null; error: string | null }> {
+  return createUserInternal({ name, email, password, role }, 'admin')
+}
+
+// Create a regular user (calls internal helper)
+// WHY: Provides a clear API for creating regular users
 export async function createUser({ name, email, password, role }: CreateUserParams): Promise<{ user: AuthResult | null; error: string | null }> {
-  try {
-    const { user, error } = await localDb.createUser({ name, email, password, role })
-
-    if (error) {
-      logger.error('User creation failed', new Error(error), { email, role })
-      return { user: null, error }
-    }
-
-    logger.info('User created successfully', { userId: user?.id, email: user?.email, role: user?.role })
-    return {
-      user: user ? {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      } : null,
-      error: null,
-    }
-  } catch (error) {
-    logger.error('Unexpected error during user creation', error as Error, { email, role })
-    return { user: null, error: (error as Error).message || 'An unexpected error occurred' }
-  }
+  return createUserInternal({ name, email, password, role }, 'regular')
 }
 
 // Admin account creation utilities
@@ -178,8 +188,11 @@ export async function createAdminAccount(email: string, password: string, name: 
     }
 
     // Validate admin setup password
+    // SECURITY: Don't expose the actual password in error message - just say it's invalid
+    // WHY: Revealing the password in error messages is a security risk
     if (adminSetupPassword !== ADMIN_SETUP_CONFIG.ADMIN_SETUP_PASSWORD) {
-      return { success: false, error: 'Invalid admin setup password. Please use: AdminSetup2025!' }
+      logger.warn('Admin account creation failed - invalid setup password', { email, name })
+      return { success: false, error: 'Invalid admin setup password' }
     }
 
     // Create the admin account using local database

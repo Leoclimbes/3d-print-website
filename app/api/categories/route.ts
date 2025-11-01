@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 
 // Mock data for categories
 const mockCategories = [
@@ -43,7 +44,8 @@ export async function GET(request: NextRequest) {
       total: mockCategories.length
     })
   } catch (error) {
-    console.error('Error fetching categories:', error)
+    // Use logger for consistent error reporting
+    logger.error('Error fetching categories', error as Error, {})
     return NextResponse.json(
       { success: false, error: 'Failed to fetch categories' },
       { status: 500 }

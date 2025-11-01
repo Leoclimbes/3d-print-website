@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import bcrypt from 'bcryptjs'
+import { logger } from './logger'
 
 // Simple file-based database for demo purposes
 const DB_PATH = path.join(process.cwd(), 'data')
@@ -33,21 +34,35 @@ class LocalDatabase {
     this.loadUsers()
   }
 
+  // Load users from JSON file into memory
+  // WHY: We need to read the latest user data from the file before performing operations
+  // CONCURRENCY NOTE: File-based DB has limitations with concurrent writes - consider a real DB for production
   private loadUsers() {
     try {
       const data = fs.readFileSync(USERS_FILE, 'utf8')
       this.users = JSON.parse(data)
     } catch (error) {
-      console.error('Error loading users:', error)
+      // Use logger instead of console.error for consistent logging
+      // WHY: Logger provides better formatting, timestamps, and can be configured for production
+      logger.error('Error loading users from file', error as Error, { file: USERS_FILE })
       this.users = []
     }
   }
 
+  // Save users from memory to JSON file
+  // WHY: We need to persist changes to disk so they survive server restarts
+  // CONCURRENCY NOTE: Multiple simultaneous saves could cause data loss - file locking would help
   private saveUsers() {
     try {
-      fs.writeFileSync(USERS_FILE, JSON.stringify(this.users, null, 2))
+      // Write atomically by writing to a temp file first, then renaming
+      // WHY: This prevents corruption if the process crashes mid-write
+      const tempFile = `${USERS_FILE}.tmp`
+      fs.writeFileSync(tempFile, JSON.stringify(this.users, null, 2))
+      fs.renameSync(tempFile, USERS_FILE)
     } catch (error) {
-      console.error('Error saving users:', error)
+      // Use logger for consistent error reporting
+      logger.error('Error saving users to file', error as Error, { file: USERS_FILE })
+      throw error // Re-throw so caller knows save failed
     }
   }
 
@@ -67,11 +82,13 @@ class LocalDatabase {
       // Hash the password
       const password_hash = await bcrypt.hash(userData.password, 12)
 
-      // Create new user
+      // Create new user with unique ID
+      // WHY: We need a unique identifier for each user
+      // SECURITY: ID generation uses timestamp + random to minimize collision risk
       const newUser: User = {
-        id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        email: userData.email,
-        name: userData.name,
+        id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`, // Use substring instead of deprecated substr
+        email: userData.email.toLowerCase().trim(), // Normalize email
+        name: userData.name.trim(), // Remove leading/trailing whitespace
         password_hash,
         role: userData.role,
         created_at: new Date().toISOString(),
@@ -81,16 +98,24 @@ class LocalDatabase {
       this.users.push(newUser)
       this.saveUsers()
 
+      logger.info('User created successfully', { userId: newUser.id, email: newUser.email, role: newUser.role })
       return { user: newUser, error: null }
     } catch (error) {
+      // Log the actual error but return generic message to user
+      // WHY: Don't expose internal errors to potential attackers
+      logger.error('Failed to create user', error as Error, { email: userData.email })
       return { user: null, error: 'Failed to create user' }
     }
   }
 
   async findUserByEmail(email: string): Promise<User | null> {
     // Always reload users from file to ensure we have latest data
+    // WHY: In a multi-process environment, another process might have updated the file
     this.loadUsers()
-    return this.users.find(u => u.email === email) || null
+    // Normalize email for comparison (lowercase, trim)
+    // WHY: Email matching should be case-insensitive
+    const normalizedEmail = email.toLowerCase().trim()
+    return this.users.find(u => u.email.toLowerCase() === normalizedEmail) || null
   }
 
   async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
