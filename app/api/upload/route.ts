@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { uploadImageToCloudinary } from '@/lib/cloudinary'
+import { uploadImageToLocal } from '@/lib/cloudinary'
 
 // ============================================================================
-// POST /api/upload - Upload Images to Cloudinary
+// POST /api/upload - Upload Images to Local Storage
 // ============================================================================
 // WHY: This API route handles image uploads securely on the server side.
-// Client-side uploads would expose API keys, so we do it server-side instead.
+// Files are saved to public/uploads so they're accessible via public URLs.
 // The route checks for admin authentication before allowing uploads.
 
 export async function POST(request: NextRequest) {
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     // WHY: Only admins should be able to upload product images
     const session = await getServerSession(authOptions)
     
-    if (session?.user?.role !== 'admin') {
+    if (!session || session?.user?.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Admin access required' },
         { status: 401 }
@@ -24,63 +24,118 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse the form data from the request
-    // WHY: FormData contains the file that was uploaded from the client
+    // WHY: FormData contains the file(s) that were uploaded from the client
     const formData = await request.formData()
+    
+    // Get all files from the 'files' field
+    // WHY: We support multiple file uploads (user can select multiple images at once)
     const files = formData.getAll('files') as File[]
 
     // Validate that files were provided
+    // WHY: We can't upload if no files were sent
     if (!files || files.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'No files provided' },
+        { success: false, error: 'No files provided. Please select at least one image.' },
         { status: 400 }
       )
     }
 
-    // Upload each file to Cloudinary and collect the URLs
-    // WHY: We support multiple image uploads at once for product galleries
-    const uploadPromises = files.map(async (file) => {
-      try {
-        // Validate file type - only allow images
-        // WHY: Security measure to prevent non-image files from being uploaded
-        if (!file.type.startsWith('image/')) {
-          throw new Error(`File ${file.name} is not an image`)
-        }
-
-        // Upload to Cloudinary with folder organization
-        // WHY: 'products' folder keeps all product images organized in Cloudinary
-        const result = await uploadImageToCloudinary(file, 'products')
-        
-        return {
-          url: result.url,
-          public_id: result.public_id,
-          name: file.name
-        }
-      } catch (error) {
-        console.error(`Error uploading file ${file.name}:`, error)
-        throw error
+    // Validate each file before uploading
+    // WHY: We want to check all files first, then upload all at once (all or nothing approach)
+    const validationErrors: string[] = []
+    
+    files.forEach((file, index) => {
+      // Check if file has a valid image type
+      // WHY: Security - we only want image files, not executables or documents
+      if (!file.type || !file.type.startsWith('image/')) {
+        validationErrors.push(`File ${index + 1} (${file.name}) is not an image file`)
+      }
+      
+      // Check file size (limit to 10MB per file)
+      // WHY: Prevent huge files that could fill up disk space or cause slow uploads
+      const maxSize = 10 * 1024 * 1024 // 10MB in bytes
+      if (file.size > maxSize) {
+        validationErrors.push(`File ${index + 1} (${file.name}) is too large. Maximum size is 10MB.`)
+      }
+      
+      // Check if file is empty
+      // WHY: Empty files can cause errors
+      if (file.size === 0) {
+        validationErrors.push(`File ${index + 1} (${file.name}) is empty.`)
       }
     })
 
-    // Wait for all uploads to complete
-    // WHY: Promise.all waits for all uploads before responding
-    const uploadedImages = await Promise.all(uploadPromises)
+    // If validation errors exist, return them
+    // WHY: Better to fail early with clear error messages than start uploading
+    if (validationErrors.length > 0) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Validation failed',
+          details: validationErrors 
+        },
+        { status: 400 }
+      )
+    }
 
-    // Return success response with uploaded image URLs
-    // WHY: The client needs these URLs to save with the product
+    // Upload each file and collect the results
+    // WHY: We support multiple image uploads at once for product galleries
+    const uploadResults = []
+    
+    // Use for...of loop instead of Promise.all to upload sequentially
+    // WHY: Prevents overwhelming the server with simultaneous writes, and better error handling
+    for (const file of files) {
+      try {
+        // Upload file to local storage (public/uploads/products/)
+        // WHY: uploadImageToLocal saves the file and returns the public URL
+        const result = await uploadImageToLocal(file, 'products')
+        
+        // Store result with original filename for reference
+        // WHY: Useful for debugging and user feedback
+        uploadResults.push({
+          url: result.url, // Public URL like "/uploads/products/image-123.jpg"
+          filename: result.filename, // Actual filename on disk
+          name: file.name, // Original filename from user's computer
+          size: file.size // File size in bytes
+        })
+      } catch (error) {
+        // If one file fails, log it and include in response
+        // WHY: User should know which file failed, but other files might still succeed
+        console.error(`Error uploading file ${file.name}:`, error)
+        
+        // Return error for this specific file
+        // WHY: User needs to know what went wrong
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: `Failed to upload ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}` 
+          },
+          { status: 500 }
+        )
+      }
+    }
+
+    // If we got here, all uploads succeeded
+    // WHY: Return success with all uploaded image URLs
     return NextResponse.json({
       success: true,
-      data: uploadedImages
+      data: uploadResults,
+      message: `Successfully uploaded ${uploadResults.length} image(s)`
     }, { status: 200 })
 
   } catch (error) {
-    console.error('Error uploading images:', error)
+    // Catch any unexpected errors
+    // WHY: Better error handling prevents crashes and gives useful feedback
+    console.error('Error in upload route:', error)
+    
+    // Return detailed error message
+    // WHY: Helps with debugging and user feedback
     return NextResponse.json(
       { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Failed to upload images' 
+        error: error instanceof Error ? error.message : 'Failed to upload images. Please try again.' 
       },
       { status: 500 }
     )
   }
 }
-
