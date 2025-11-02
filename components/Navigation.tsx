@@ -13,10 +13,16 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { ShoppingCart, User, LogOut, Settings, Package } from 'lucide-react'
 import { useState } from 'react'
+import { useCart } from '@/contexts/CartContext'
 
 export default function Navigation() {
   const { data: session, status } = useSession()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  
+  // useCart hook - access cart context to get cart item count
+  // WHY: Navigation needs to display the number of items in cart as a badge
+  // This allows us to show a badge with the total number of items
+  const { itemCount } = useCart()
 
   // Show loading state while checking authentication
   if (status === 'loading') {
@@ -78,12 +84,19 @@ export default function Navigation() {
           {/* Right side actions */}
           <div className="flex items-center space-x-4">
             {/* Shopping Cart Button */}
+            {/* WHY: Users need quick access to their shopping cart from any page */}
             <Button variant="outline" size="sm" asChild>
               <Link href="/cart" className="flex items-center space-x-2">
                 <ShoppingCart className="h-4 w-4" />
                 <span className="hidden sm:inline">Cart</span>
-                {/* Cart count badge would go here */}
-                {/* <Badge variant="destructive" className="ml-1">3</Badge> */}
+                {/* Cart count badge - shows total number of items in cart */}
+                {/* WHY: Users should see how many items are in their cart at a glance */}
+                {/* Only show badge if there are items in cart */}
+                {itemCount > 0 && (
+                  <Badge variant="destructive" className="ml-1 min-w-[1.5rem] flex items-center justify-center">
+                    {itemCount}
+                  </Badge>
+                )}
               </Link>
             </Button>
 

@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Navigation from '@/components/Navigation'
 import { ShoppingCart, ArrowLeft, ChevronLeft, ChevronRight, Package, DollarSign, Tag } from 'lucide-react'
+import { useCart } from '@/contexts/CartContext'
+import { toast } from 'sonner'
 
 // Product interface - defines the structure of product data from the API
 // WHY: TypeScript needs to know what properties each product has
@@ -33,6 +35,15 @@ interface Product {
 }
 
 export default function ProductDetailPage() {
+  // ============================================================================
+  // CART CONTEXT - Access cart functionality
+  // ============================================================================
+  
+  // useCart hook - access cart context to add items to cart
+  // WHY: We need to add products to cart when user clicks "Add to Cart" button
+  // This gives us access to addToCart function and cart state
+  const { addToCart } = useCart()
+  
   // ============================================================================
   // ROUTING & PARAMS - Get product ID from URL
   // ============================================================================
@@ -175,27 +186,32 @@ export default function ProductDetailPage() {
     // WHY: Can't add to cart if product data is missing
     if (!product) return
     
-    // TODO: Implement cart functionality
-    // WHY: Cart functionality will be implemented later - for now just show an alert
-    // In production, this would:
-    // 1. Check if user is logged in
-    // 2. Add product to cart (stored in database or session/localStorage)
-    // 3. Show success notification
-    // 4. Update cart count in navigation
+    // Check if product is in stock
+    // WHY: Can't add out-of-stock products to cart
+    if (product.stock === 0) {
+      toast.error('This product is out of stock')
+      return
+    }
     
-    // Temporary: Show alert that cart is not yet implemented
-    alert(`"${product.name}" added to cart!\n\nCart functionality will be implemented soon.`)
+    // Add product to cart using cart context
+    // WHY: Use the addToCart function from CartContext to manage cart state
+    // Pass product data: id, name, price, images array, and stock
+    // Quantity defaults to 1 (user adds one item at a time)
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      images: product.images || [], // Pass images array or empty array if none
+      stock: product.stock,
+    }, 1) // Add quantity of 1
     
-    // Future implementation example:
-    // const response = await fetch('/api/cart/add', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ productId: product.id, quantity: 1 })
-    // })
-    // if (response.ok) {
-    //   // Show toast notification: "Added to cart!"
-    //   // Update cart count in navigation
-    // }
+    // Show success notification
+    // WHY: Users need feedback that the item was successfully added
+    // toast.success displays a nice notification at the top-right of the screen
+    // Shorter notification - just product name, no description, 2 second duration
+    toast.success(`Added to cart!`, {
+      duration: 2000, // Notification disappears after 2 seconds
+    })
   }
 
   // ============================================================================
