@@ -239,7 +239,7 @@ export default function About() {
       {/* WHY: Consistent footer across pages provides navigation and branding */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-3 gap-8">
             {/* Company Info Column */}
             <div>
               <h3 className="text-lg font-semibold mb-4">Olingo Labs</h3>
@@ -263,14 +263,6 @@ export default function About() {
                 <li><Link href="/shipping" className="hover:text-white transition-colors">Shipping Info</Link></li>
                 <li><Link href="/returns" className="hover:text-white transition-colors">Returns</Link></li>
                 <li><Link href="/faq" className="hover:text-white transition-colors">FAQ</Link></li>
-              </ul>
-            </div>
-            {/* Connect Column */}
-            <div>
-              <h4 className="font-semibold mb-4">Connect</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/newsletter" className="hover:text-white transition-colors">Newsletter</Link></li>
-                <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
               </ul>
             </div>
           </div>

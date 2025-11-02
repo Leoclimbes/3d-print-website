@@ -103,7 +103,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-3 gap-8">
             <div>
               <h3 className="text-lg font-semibold mb-4">3D Print Shop</h3>
               <p className="text-gray-400">
@@ -124,16 +124,6 @@ export default function Home() {
                 <li><Link href="/shipping" className="text-white">Shipping Info</Link></li>
                 <li><Link href="/returns" className="text-white">Returns</Link></li>
                 <li><Link href="/faq" className="text-white">FAQ</Link></li>
-                <li><Link href="/support" className="text-white">Support</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Connect</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/newsletter" className="text-white">Newsletter</Link></li>
-                <li><Link href="/social" className="text-white">Social Media</Link></li>
-                <li><Link href="/blog" className="text-white">Blog</Link></li>
-                <li><Link href="/admin-setup" className="text-white text-xs">Admin Setup</Link></li>
               </ul>
             </div>
           </div>

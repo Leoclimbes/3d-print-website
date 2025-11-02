@@ -54,7 +54,11 @@ export default function Navigation() {
           </div>
 
           {/* Desktop Navigation Links */}
+          {/* WHY: Main navigation links provide access to key pages */}
+          {/* Responsive: hidden on mobile, shown on desktop (md:flex) */}
           <div className="hidden md:flex items-center space-x-8">
+            {/* Main Navigation Links */}
+            {/* WHY: Core pages users need to access frequently */}
             <Link 
               href="/products" 
               className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
@@ -72,6 +76,26 @@ export default function Navigation() {
               className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
             >
               Contact
+            </Link>
+            {/* Customer Service Links */}
+            {/* WHY: Shipping, Returns, and FAQ pages provide important customer service information */}
+            <Link 
+              href="/shipping" 
+              className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
+            >
+              Shipping
+            </Link>
+            <Link 
+              href="/returns" 
+              className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
+            >
+              Returns
+            </Link>
+            <Link 
+              href="/faq" 
+              className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
+            >
+              FAQ
             </Link>
           </div>
 
@@ -171,9 +195,13 @@ export default function Navigation() {
         </div>
 
         {/* Mobile Navigation Menu */}
+        {/* WHY: Mobile menu provides navigation on smaller screens */}
+        {/* Shows when isMenuOpen state is true, hidden on desktop (md:hidden) */}
         {isMenuOpen && (
           <div className="md:hidden border-t bg-white">
             <div className="px-2 pt-2 pb-3 space-y-1">
+              {/* Main Navigation Links for Mobile */}
+              {/* WHY: Same core pages available on mobile as desktop */}
               <Link 
                 href="/products" 
                 className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors"
@@ -194,6 +222,30 @@ export default function Navigation() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Contact
+              </Link>
+              {/* Customer Service Links for Mobile */}
+              {/* WHY: Shipping, Returns, and FAQ pages also accessible on mobile */}
+              {/* onClick closes the mobile menu after navigation */}
+              <Link 
+                href="/shipping" 
+                className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Shipping
+              </Link>
+              <Link 
+                href="/returns" 
+                className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Returns
+              </Link>
+              <Link 
+                href="/faq" 
+                className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                FAQ
               </Link>
             </div>
           </div>
