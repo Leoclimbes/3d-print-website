@@ -1,1 +1,41 @@
-[]
+[
+  {
+    "id": "1",
+    "name": "Organizer",
+    "description": "A desk organizer",
+    "price": 15.99,
+    "category": "Office",
+    "images": [
+      "/uploads/products/il-340x270-5994055799-m1p5-jpg-1762045432133-e74cxld.webp"
+    ],
+    "stock": 100,
+    "createdAt": "2025-11-02T01:03:52.973Z",
+    "updatedAt": "2025-11-02T01:03:52.973Z"
+  },
+  {
+    "id": "2",
+    "name": "Chicken cable holder",
+    "description": "A fun little cable holder",
+    "price": 10.99,
+    "category": "Accessories",
+    "images": [
+      "/uploads/products/3d-printed-office-supplies-02-1762045514326-4slz4j8.png"
+    ],
+    "stock": 100,
+    "createdAt": "2025-11-02T01:05:15.457Z",
+    "updatedAt": "2025-11-02T01:05:15.457Z"
+  },
+  {
+    "id": "3",
+    "name": "Parry Platepus Toy",
+    "description": "Fun little toy",
+    "price": 12.99,
+    "category": "Toys",
+    "images": [
+      "/uploads/products/715rziozkwl--ac-uf894-1000-ql80--1762045718520-xrju8v0.jpg"
+    ],
+    "stock": 100,
+    "createdAt": "2025-11-02T01:08:39.915Z",
+    "updatedAt": "2025-11-02T01:08:39.915Z"
+  }
+]
