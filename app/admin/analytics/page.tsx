@@ -13,6 +13,25 @@ import {
   Calendar,
   Download
 } from 'lucide-react'
+// Recharts imports - A popular React charting library
+// LineChart: Creates a line chart (good for showing trends over time)
+// AreaChart: Similar to line but with filled area under the line (more visual)
+// PieChart: Circular chart showing proportions/percentages
+// Tooltip: Shows data when you hover over chart elements
+// Legend: Shows what each color/series represents
+// ResponsiveContainer: Makes chart automatically resize to fit its container
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts'
 
 // ============================================================================
 // MOCK DATA - Defined at module level (outside component)
@@ -76,6 +95,11 @@ const orderStatusDistribution = [
   { status: 'Shipped', count: 23, percentage: 14.7 },
   { status: 'Pending', count: 10, percentage: 6.4 }
 ]
+
+// Color palette for charts - defined as constants for reusability
+// COLORS array: Used for pie chart segments, each status gets a unique color
+// These colors are visually distinct and accessible (good contrast)
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'] // blue, green, orange, red
 
 export default function AnalyticsPage() {
 
@@ -204,13 +228,72 @@ export default function AnalyticsPage() {
             <CardDescription>Monthly revenue over the last 6 months</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-              <div className="text-center">
-                <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-500">Revenue chart will be implemented here</p>
-                <p className="text-sm text-gray-400">Integration with charting library needed</p>
-              </div>
-            </div>
+            {/* ResponsiveContainer: Wraps the chart and makes it responsive (adapts to container size) */}
+            {/* width="100%" height={250}: Chart takes full width, fixed height of 250px */}
+            <ResponsiveContainer width="100%" height={250}>
+              {/* AreaChart: Creates an area chart (line with filled area underneath) */}
+              {/* data: The data array to visualize (monthlyRevenue from above) */}
+              {/* margin: Adds padding inside chart so axis labels don't get cut off */}
+              <AreaChart data={monthlyRevenue} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                {/* CartesianGrid: Adds grid lines (horizontal/vertical) for easier reading */}
+                {/* strokeDasharray: Makes dashed lines instead of solid */}
+                {/* stroke: Gray color for grid lines (light so they don't distract) */}
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                
+                {/* XAxis: The horizontal axis (bottom) showing month names */}
+                {/* dataKey="month": Which property from data array to display on X-axis */}
+                {/* stroke: Color of axis line and labels */}
+                {/* tick: Custom styling for the month labels */}
+                <XAxis 
+                  dataKey="month" 
+                  stroke="#6b7280"
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                />
+                
+                {/* YAxis: The vertical axis (left) showing revenue values */}
+                {/* stroke: Color of axis line and labels */}
+                {/* tick: Custom styling for revenue value labels */}
+                {/* tickFormatter: Formats numbers - adds $ and commas (e.g., "$12,450") */}
+                <YAxis 
+                  stroke="#6b7280"
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tickFormatter={(value) => `$${value.toLocaleString()}`}
+                />
+                
+                {/* Tooltip: Shows detailed info when hovering over chart points */}
+                {/* cursor: Shows a line/indicator where you're hovering */}
+                {/* contentStyle: Custom styling for the tooltip popup */}
+                <Tooltip 
+                  cursor={{ stroke: '#3b82f6', strokeWidth: 1 }}
+                  contentStyle={{
+                    backgroundColor: '#fff',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    padding: '8px 12px'
+                  }}
+                  // labelFormatter: Custom format for the month label in tooltip
+                  labelFormatter={(label) => `Month: ${label}`}
+                  // formatter: Custom format for the revenue value in tooltip
+                  formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                />
+                
+                {/* Area: The actual visual element - the filled area/line */}
+                {/* type: "monotone" creates smooth curved lines (other options: linear, step) */}
+                {/* dataKey="revenue": Which property from data to plot */}
+                {/* stroke: Color of the line (blue) */}
+                {/* strokeWidth: Thickness of the line */}
+                {/* fill: Color of the filled area underneath (blue with transparency) */}
+                {/* fillOpacity: How transparent the fill is (0.1 = 10% opacity, mostly see-through) */}
+                <Area 
+                  type="monotone" 
+                  dataKey="revenue" 
+                  stroke="#3b82f6" 
+                  strokeWidth={2}
+                  fill="#3b82f6" 
+                  fillOpacity={0.1}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
@@ -224,17 +307,70 @@ export default function AnalyticsPage() {
             <CardDescription>Current order status breakdown</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            {/* ResponsiveContainer: Makes the pie chart responsive and fit container */}
+            <ResponsiveContainer width="100%" height={250}>
+              {/* PieChart: Creates a circular pie chart showing proportions */}
+              <PieChart>
+                {/* Pie: The actual pie chart element */}
+                {/* data: The data array (orderStatusDistribution) */}
+                {/* dataKey: Which property to use for the size of each slice (percentage) */}
+                {/* nameKey: Which property to use for labeling (status) */}
+                {/* cx, cy: Center position of pie (50% = middle of container) */}
+                {/* outerRadius: Size of the pie (80px radius = 160px diameter) */}
+                {/* fill: Default color (gets overridden by Cell colors below) */}
+                {/* label: Function to show labels on each slice */}
+                <Pie
+                  data={orderStatusDistribution}
+                  dataKey="percentage"
+                  nameKey="status"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  fill="#8884d8"
+                  label={({ status, percentage }) => `${status}: ${percentage}%`}
+                >
+                  {/* Cell: Individual slice styling - one for each data item */}
+                  {/* We map through COLORS array to give each slice a different color */}
+                  {/* index: The position in the data array (0, 1, 2, 3) */}
+                  {orderStatusDistribution.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={COLORS[index % COLORS.length]} 
+                    />
+                  ))}
+                </Pie>
+                
+                {/* Tooltip: Shows detailed info when hovering over pie slices */}
+                {/* contentStyle: Custom styling for the tooltip popup */}
+                {/* formatter: Custom format - shows count and percentage */}
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: '#fff',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    padding: '8px 12px'
+                  }}
+                  formatter={(value: number, name: string, props: any) => [
+                    `${props.payload.count} orders (${value}%)`,
+                    props.payload.status
+                  ]}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            
+            {/* Legend: Visual key showing what each color represents */}
+            {/* This adds a nice legend below the chart */}
+            <div className="mt-4 flex flex-wrap justify-center gap-4">
               {orderStatusDistribution.map((item, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                    <span className="text-sm font-medium">{item.status}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm font-semibold">{item.count}</span>
-                    <span className="text-xs text-gray-500">({item.percentage}%)</span>
-                  </div>
+                <div key={index} className="flex items-center space-x-2">
+                  {/* Color indicator: Small square showing the color for this status */}
+                  <div 
+                    className="w-3 h-3 rounded-sm" 
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                  ></div>
+                  {/* Status label and count */}
+                  <span className="text-sm font-medium">{item.status}</span>
+                  <span className="text-xs text-gray-500">({item.count})</span>
                 </div>
               ))}
             </div>
