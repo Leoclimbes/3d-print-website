@@ -19,5 +19,11 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id: string
     role: 'customer' | 'admin'
+    // CRITICAL FIX: Include name and email in JWT token type
+    // WHY: We store name and email in the JWT token so they can be refreshed from database
+    // when the session is updated. This ensures Navigation and other components
+    // always show the latest user data from the database.
+    name?: string | null
+    email?: string
   }
 }

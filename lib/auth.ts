@@ -85,17 +85,53 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60,
   },
   callbacks: {
-    async jwt({ token, user }) {
+    // JWT callback - called whenever a JWT is created or updated
+    // WHY: This allows us to store user data in the JWT token
+    async jwt({ token, user, trigger }) {
+      // When user first logs in, store their data in the token
+      // WHY: Initial login - save user data to token
       if (user) {
         token.role = user.role
         token.id = user.id
+        // Handle email - convert null to undefined for JWT type compatibility
+        // WHY: JWT token type expects string | undefined, but user.email might be string | null
+        token.email = user.email || undefined
+        // Handle name - can be null, which is allowed by JWT type
+        // WHY: Names are optional, so null is valid
+        token.name = user.name ?? null
       }
+      
+      // CRITICAL FIX: Refresh user data from database when session is updated
+      // WHY: When the user updates their profile, we trigger a session refresh.
+      // This ensures the token always has the latest name and email from the database.
+      // The 'trigger' parameter is 'update' when session.update() is called.
+      if (trigger === 'update' && token.id) {
+        // Fetch fresh user data from database
+        // WHY: Database is source of truth - token should always match database
+        const freshUser = await localDb.findUserById(token.id)
+        if (freshUser) {
+          // Update token with fresh data from database
+          // WHY: Keep token in sync with database after profile updates
+          token.name = freshUser.name
+          token.email = freshUser.email
+          token.role = freshUser.role
+        }
+      }
+      
       return token
     },
+    // Session callback - called whenever a session is checked
+    // WHY: This allows us to include custom data in the session object
     async session({ session, token }) {
       if (token) {
+        // Copy data from token to session
+        // WHY: Token has the user data, session object needs it for client components
         session.user.id = token.id as string
         session.user.role = token.role as 'customer' | 'admin'
+        // CRITICAL FIX: Include name and email from token in session
+        // WHY: Navigation and other components read session.user.name - it must be fresh!
+        session.user.name = token.name as string | null
+        session.user.email = token.email as string
       }
       return session
     }

@@ -118,6 +118,15 @@ class LocalDatabase {
     return this.users.find(u => u.email.toLowerCase() === normalizedEmail) || null
   }
 
+  // Find user by their unique ID
+  // WHY: We often need to look up users by ID instead of email (e.g., when updating profile)
+  async findUserById(id: string): Promise<User | null> {
+    // Always reload users from file to ensure we have latest data
+    // WHY: In a multi-process environment, another process might have updated the file
+    this.loadUsers()
+    return this.users.find(u => u.id === id) || null
+  }
+
   async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
     return await bcrypt.compare(password, hashedPassword)
   }
@@ -131,16 +140,36 @@ class LocalDatabase {
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User | null> {
+    // CRITICAL FIX: Reload users from file before updating
+    // WHY: Ensures we have the latest data from disk before making changes.
+    // Without this, if another process or request modified the file,
+    // we might be working with stale in-memory data and overwrite recent changes.
+    // This is especially important in development with hot reloading.
+    this.loadUsers()
+    
+    // Find the user's index in the array by their unique ID
+    // WHY: We need to locate the user record before we can update it
     const userIndex = this.users.findIndex(u => u.id === id)
+    
+    // If user not found, return null to indicate failure
+    // WHY: Can't update a user that doesn't exist
     if (userIndex === -1) return null
 
+    // Create updated user object by spreading existing data and applying updates
+    // WHY: Partial updates - we only change the fields provided, keeping other fields unchanged
+    // Also update the 'updated_at' timestamp to track when the record was modified
     this.users[userIndex] = {
-      ...this.users[userIndex],
-      ...updates,
-      updated_at: new Date().toISOString(),
+      ...this.users[userIndex],  // Keep all existing fields
+      ...updates,                 // Apply new/changed fields from updates parameter
+      updated_at: new Date().toISOString(), // Always update timestamp when record changes
     }
 
+    // Save the updated users array to disk
+    // WHY: Persist changes to file so they survive server restarts
     this.saveUsers()
+    
+    // Return the updated user object
+    // WHY: Caller needs the updated data to send back to client
     return this.users[userIndex]
   }
 
