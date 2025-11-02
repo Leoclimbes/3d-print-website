@@ -1,8 +1,5 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import Navigation from '@/components/Navigation'
 import { Star, Truck, Shield, Zap } from 'lucide-react'
 
@@ -83,133 +80,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Products Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Featured Products
-            </h2>
-            <p className="text-xl text-gray-600">
-              Discover our most popular 3D printed items
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Sample Product Cards */}
-            <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="aspect-square bg-gray-200 relative">
-                <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                  <span className="text-sm">Product Image</span>
-                </div>
-              </div>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Custom Phone Stand</CardTitle>
-                  <Badge variant="secondary">Featured</Badge>
-                </div>
-                <CardDescription>
-                  Adjustable phone stand perfect for desk work
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold text-green-600">$12.99</span>
-                  <Button size="sm">Add to Cart</Button>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="aspect-square bg-gray-200 relative">
-                <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                  <span className="text-sm">Product Image</span>
-                </div>
-              </div>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Dragon Figurine</CardTitle>
-                  <Badge variant="secondary">Featured</Badge>
-                </div>
-                <CardDescription>
-                  Detailed dragon figurine for collectors
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold text-green-600">$24.99</span>
-                  <Button size="sm">Add to Cart</Button>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="aspect-square bg-gray-200 relative">
-                <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                  <span className="text-sm">Product Image</span>
-                </div>
-              </div>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Cable Tray</CardTitle>
-                  <Badge variant="secondary">Featured</Badge>
-                </div>
-                <CardDescription>
-                  Organize your desk cables with this sleek tray
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold text-green-600">$18.99</span>
-                  <Button size="sm">Add to Cart</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <div className="text-center mt-12">
-            <Button size="lg" asChild>
-              <Link href="/products">View All Products</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Categories Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Shop by Category
-            </h2>
-            <p className="text-xl text-gray-600">
-              Find exactly what you're looking for
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { name: 'Toys & Games', slug: 'toys-games', description: 'Fun 3D printed toys and games' },
-              { name: 'Home & Garden', slug: 'home-garden', description: 'Decorative home items' },
-              { name: 'Accessories', slug: 'accessories', description: 'Phone cases and accessories' },
-              { name: 'Art & Sculptures', slug: 'art-sculptures', description: 'Decorative art pieces' },
-            ].map((category) => (
-              <Card key={category.slug} className="hover:shadow-lg transition-shadow cursor-pointer">
-                <CardHeader>
-                  <CardTitle className="text-lg">{category.name}</CardTitle>
-                  <CardDescription>{category.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="outline" className="w-full" asChild>
-                    <Link href={`/categories/${category.slug}`}>Browse</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="py-20 bg-blue-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -244,7 +114,6 @@ export default function Home() {
               <h4 className="font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2 text-gray-400">
                 <li><Link href="/products" className="text-white">Products</Link></li>
-                <li><Link href="/categories" className="text-white">Categories</Link></li>
                 <li><Link href="/about" className="text-white">About</Link></li>
                 <li><Link href="/contact" className="text-white">Contact</Link></li>
               </ul>

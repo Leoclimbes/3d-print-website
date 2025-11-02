@@ -28,6 +28,24 @@ export async function POST(request: NextRequest) {
     // WHY: FormData contains the file(s) that were uploaded from the client
     const formData = await request.formData()
     
+    // Get folder parameter from form data (default to 'products' for backwards compatibility)
+    // WHY: Categories need images uploaded to a different folder than products
+    // This allows us to organize uploads: products go to /uploads/products/, categories go to /uploads/categories/
+    const folder = (formData.get('folder') as string) || 'products'
+    
+    // Validate folder name to prevent directory traversal attacks
+    // WHY: Only allow safe folder names, prevent users from uploading to arbitrary paths
+    const allowedFolders = ['products', 'categories']
+    if (!allowedFolders.includes(folder)) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `Invalid folder. Allowed folders: ${allowedFolders.join(', ')}` 
+        },
+        { status: 400 }
+      )
+    }
+    
     // Get all files from the 'files' field
     // WHY: We support multiple file uploads (user can select multiple images at once)
     const files = formData.getAll('files') as File[]
@@ -87,9 +105,10 @@ export async function POST(request: NextRequest) {
     // WHY: Prevents overwhelming the server with simultaneous writes, and better error handling
     for (const file of files) {
       try {
-        // Upload file to local storage (public/uploads/products/)
+        // Upload file to local storage (public/uploads/{folder}/)
         // WHY: uploadImageToLocal saves the file and returns the public URL
-        const result = await uploadImageToLocal(file, 'products')
+        // Uses the folder parameter (either 'products' or 'categories')
+        const result = await uploadImageToLocal(file, folder)
         
         // Store result with original filename for reference
         // WHY: Useful for debugging and user feedback

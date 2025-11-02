@@ -10,6 +10,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -46,6 +47,21 @@ interface Category {
 
 export default function ProductsPage() {
   // ============================================================================
+  // URL QUERY PARAMETERS - Read category filter from URL
+  // ============================================================================
+  
+  // useSearchParams hook - reads query parameters from the URL
+  // WHY: When users click on a category from the categories page, the URL will be
+  // /products?category=Accessories. We need to read this to set the initial filter.
+  // Example: /products?category=Gaming → searchParams.get('category') = "Gaming"
+  const searchParams = useSearchParams()
+  
+  // Get category from URL query parameter
+  // WHY: The categories page links to /products?category=CategoryName
+  // This allows users to navigate directly to filtered products
+  const categoryFromUrl = searchParams.get('category')
+  
+  // ============================================================================
   // CART CONTEXT - Access cart functionality
   // ============================================================================
   
@@ -73,7 +89,11 @@ export default function ProductsPage() {
   // Category filter - stores the selected category (or "all" for no filter)
   // WHY: Users can filter products to show only items in a specific category
   // "all" is used because Radix UI Select requires non-empty values
-  const [categoryFilter, setCategoryFilter] = useState('all')
+  // Initialize with category from URL if present, otherwise "all"
+  // WHY: When users come from the categories page, we want to automatically filter by that category
+  const [categoryFilter, setCategoryFilter] = useState(
+    categoryFromUrl || 'all' // Use category from URL if available, otherwise show all
+  )
   
   // Categories array - stores available categories for the filter dropdown
   // WHY: The filter dropdown needs a list of all available categories
@@ -143,12 +163,22 @@ export default function ProductsPage() {
     }
   }
 
-  // useEffect hook - runs when component mounts (on page load)
-  // WHY: We need to fetch data when the page first loads
+  // useEffect hook - runs when component mounts or URL changes
+  // WHY: We need to fetch data when the page first loads, and update filter when URL changes
   useEffect(() => {
     fetchProducts() // Load products
     fetchCategories() // Load categories for filtering
-  }, []) // Empty dependency array means this runs once on mount
+    
+    // Update category filter when URL query parameter changes
+    // WHY: If user navigates directly to /products?category=Gaming, we should filter by Gaming
+    // This also handles the case where user navigates back/forward in browser history
+    if (categoryFromUrl) {
+      setCategoryFilter(categoryFromUrl)
+    } else {
+      // If no category in URL, reset to "all"
+      setCategoryFilter('all')
+    }
+  }, [categoryFromUrl]) // Re-run when categoryFromUrl changes (URL query parameter changes)
 
   // ============================================================================
   // FILTERING LOGIC - Filter products based on search term and category

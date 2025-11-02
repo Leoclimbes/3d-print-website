@@ -62,12 +62,6 @@ export default function Navigation() {
               Products
             </Link>
             <Link 
-              href="/categories" 
-              className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
-            >
-              Categories
-            </Link>
-            <Link 
               href="/about" 
               className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
             >
@@ -186,13 +180,6 @@ export default function Navigation() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Products
-              </Link>
-              <Link 
-                href="/categories" 
-                className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Categories
               </Link>
               <Link 
                 href="/about" 
