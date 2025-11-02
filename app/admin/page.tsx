@@ -19,7 +19,8 @@ import {
   Activity,
   CheckCircle,
   AlertCircle,
-  Settings
+  Settings,
+  Home
 } from 'lucide-react'
 // Recharts imports for creating sales chart visualization
 // WHY: Recharts is a composable charting library for React that works well with TypeScript
@@ -219,6 +220,13 @@ export default function AdminDashboard() {
     router.push('/admin/settings')
   }
 
+  // Handle "Go to Main Page" button click
+  // WHY: Navigates to the main/home page of the website when admin wants to view the public-facing site
+  // This allows admins to quickly switch from admin dashboard to the customer-facing homepage
+  const handleGoToMainPage = () => {
+    router.push('/')  // Navigate to root route which is the main/home page
+  }
+
   return (
     <div className="p-0">
       {/* Header */}
@@ -239,9 +247,10 @@ export default function AdminDashboard() {
             <CardDescription>Common administrative tasks</CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Grid layout: 2 columns on mobile, 4 columns on medium+ screens */}
+            {/* Grid layout: 2 columns on mobile, 5 columns on medium+ screens */}
             {/* WHY: Responsive design ensures buttons look good on all device sizes */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Changed to 5 columns to accommodate the new "Go to Main Page" button */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {/* Add Product Button */}
               {/* WHY: onClick handler triggers navigation to product creation page */}
               {/* className includes hover states for visual feedback when user hovers */}
@@ -285,6 +294,22 @@ export default function AdminDashboard() {
                 <Settings className="h-6 w-6 text-orange-600 mb-2" />
                 <p className="font-medium text-sm">Settings</p>
                 <p className="text-xs text-gray-500">Configure shop</p>
+              </button>
+              
+              {/* Go to Main Page Button */}
+              {/* WHY: onClick handler navigates to the main/home page of the website */}
+              {/* This button allows admins to quickly switch from admin dashboard view to the public-facing homepage */}
+              {/* className includes hover states: bg-gray-50 (light gray background) -> bg-gray-100 (darker on hover) */}
+              {/* transition-colors: Smoothly animates color changes when hovering for better UX */}
+              <button 
+                onClick={handleGoToMainPage}
+                className="p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-left cursor-pointer"
+              >
+                {/* Home icon from lucide-react: Represents the main/home page */}
+                {/* text-gray-600: Gray color for the icon matching the button's gray theme */}
+                <Home className="h-6 w-6 text-gray-600 mb-2" />
+                <p className="font-medium text-sm">Main Page</p>
+                <p className="text-xs text-gray-500">View homepage</p>
               </button>
             </div>
           </CardContent>
