@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { ShoppingCart, Plus, Minus, Trash2, ArrowLeft, Package } from 'lucide-react'
+import { ShoppingCart, Plus, Minus, Trash2, ArrowLeft, Package, CreditCard } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 
@@ -393,6 +393,19 @@ export default function CartPage() {
                     <span className="text-gray-900">${total.toFixed(2)}</span>
                   </div>
                 </div>
+
+                {/* Proceed to Checkout Button */}
+                {/* WHY: Users need a prominent button to start checkout process */}
+                <Button
+                  className="w-full bg-indigo-600 hover:bg-indigo-700"
+                  size="lg"
+                  asChild
+                >
+                  <Link href="/checkout" className="flex items-center justify-center space-x-2">
+                    <CreditCard className="h-4 w-4" />
+                    <span>Proceed to Checkout</span>
+                  </Link>
+                </Button>
 
                 {/* Continue Shopping Link */}
                 {/* WHY: Users should be able to easily return to shopping */}
