@@ -1,13 +1,19 @@
 import Stripe from 'stripe'
 
 // Initialize Stripe with secret key
-// This is used for server-side operations like creating payment intents
+// WHY: This is used for server-side operations like creating payment intents
+// SECURITY: The secret key has full access to your Stripe account - keep it secret!
+// CONFIGURATION: Set STRIPE_SECRET_KEY in .env.local file (see .env.example)
+// GET YOUR KEY: https://dashboard.stripe.com/apikeys
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-09-30.clover', // Use latest API version
 })
 
 // Stripe configuration for client-side
-// This uses the publishable key and is safe for browser use
+// WHY: This uses the publishable key and is safe for browser use
+// CONFIGURATION: Set STRIPE_PUBLISHABLE_KEY in .env.local file (see .env.example)
+// GET YOUR KEY: https://dashboard.stripe.com/apikeys
+// SECURITY: Publishable key is safe to use in browser - it's public by design
 export const stripePublishableKey = process.env.STRIPE_PUBLISHABLE_KEY!
 
 // Helper function to create a checkout session

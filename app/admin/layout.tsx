@@ -11,7 +11,6 @@ import {
   ShoppingCart, 
   Users, 
   BarChart3, 
-  Settings,
   LogOut,
   Menu,
   X,
@@ -82,7 +81,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
     { name: 'Customers', href: '/admin/customers', icon: Users },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
-    { name: 'Settings', href: '/admin/settings', icon: Settings },
   ]
 
   return (

@@ -4,7 +4,14 @@ import bcrypt from 'bcryptjs'
 import { logger } from './logger'
 
 // Simple file-based database for demo purposes
-const DB_PATH = path.join(process.cwd(), 'data')
+// WHY: File-based database stores user data locally without needing external database
+// CONFIGURATION: Database path can be customized via DATABASE_PATH environment variable
+// DEFAULT: ./data (stores users.json in data/ directory)
+// HOW TO SET: Add DATABASE_PATH=/custom/path to .env.local file (optional)
+// SECURITY: The database path is not sensitive but allows customization per environment
+const DB_PATH = process.env.DATABASE_PATH 
+  ? path.resolve(process.env.DATABASE_PATH)  // Use custom path from env var if provided
+  : path.join(process.cwd(), 'data')         // Default to ./data directory
 const USERS_FILE = path.join(DB_PATH, 'users.json')
 
 // Ensure data directory exists

@@ -394,22 +394,6 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* Checkout Button */}
-                {/* WHY: Primary action - proceed to checkout */}
-                {/* Note: Checkout functionality would be implemented separately */}
-                <Button
-                  size="lg"
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                  disabled={items.length === 0}
-                  onClick={() => {
-                    // TODO: Implement checkout functionality
-                    // WHY: This would navigate to checkout page or process payment
-                    toast.info('Checkout functionality coming soon!')
-                  }}
-                >
-                  Proceed to Checkout
-                </Button>
-
                 {/* Continue Shopping Link */}
                 {/* WHY: Users should be able to easily return to shopping */}
                 <Button

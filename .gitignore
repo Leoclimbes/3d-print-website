@@ -33,6 +33,14 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# database files - contains sensitive user data
+# SECURITY: Never commit user data, passwords, or settings to git
+# WHY: User data contains password hashes and personal information
+data/users.json
+data/settings.json
+# Allow products.json to be committed (non-sensitive product catalog)
+# data/products.json
+
 # vercel
 .vercel
 

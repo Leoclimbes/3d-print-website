@@ -15,11 +15,9 @@ import {
   Plus,
   ArrowUpRight,
   ArrowDownRight,
-  Download,
   Activity,
   CheckCircle,
   AlertCircle,
-  Settings,
   Home
 } from 'lucide-react'
 // Recharts imports for creating sales chart visualization
@@ -191,33 +189,10 @@ export default function AdminDashboard() {
     router.push('/admin/products/new')
   }
 
-  // Handle "Export Data" button click
-  // WHY: Triggers data export functionality (could download CSV, JSON, or PDF report)
-  // For now, this shows an alert - in production, this would call an API endpoint to generate/download report
-  const handleExportData = () => {
-    // TODO: In production, this would fetch data and trigger download
-    // Example: fetch('/api/admin/export', { method: 'POST' }) then create download
-    alert('Export functionality will download your dashboard data as CSV/PDF.\nThis feature will be implemented soon!')
-    // Future implementation:
-    // const response = await fetch('/api/admin/export')
-    // const blob = await response.blob()
-    // const url = window.URL.createObjectURL(blob)
-    // const a = document.createElement('a')
-    // a.href = url
-    // a.download = `dashboard-export-${new Date().toISOString()}.csv`
-    // a.click()
-  }
-
   // Handle "View Customers" button click
   // WHY: Navigates to the customer management page to view and manage all customers
   const handleViewCustomers = () => {
     router.push('/admin/customers')
-  }
-
-  // Handle "Settings" button click
-  // WHY: Navigates to the admin settings page where shop configuration can be managed
-  const handleSettings = () => {
-    router.push('/admin/settings')
   }
 
   // Handle "Go to Main Page" button click
@@ -247,10 +222,9 @@ export default function AdminDashboard() {
             <CardDescription>Common administrative tasks</CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Grid layout: 2 columns on mobile, 5 columns on medium+ screens */}
+            {/* Grid layout: 2 columns on mobile, 3 columns on medium+ screens */}
             {/* WHY: Responsive design ensures buttons look good on all device sizes */}
-            {/* Changed to 5 columns to accommodate the new "Go to Main Page" button */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {/* Add Product Button */}
               {/* WHY: onClick handler triggers navigation to product creation page */}
               {/* className includes hover states for visual feedback when user hovers */}
@@ -263,17 +237,6 @@ export default function AdminDashboard() {
                 <p className="text-xs text-gray-500">Create new item</p>
               </button>
               
-              {/* Export Data Button */}
-              {/* WHY: onClick handler triggers data export functionality */}
-              <button 
-                onClick={handleExportData}
-                className="p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-left cursor-pointer"
-              >
-                <Download className="h-6 w-6 text-green-600 mb-2" />
-                <p className="font-medium text-sm">Export Data</p>
-                <p className="text-xs text-gray-500">Download reports</p>
-              </button>
-              
               {/* View Customers Button */}
               {/* WHY: onClick handler navigates to customer management page */}
               <button 
@@ -283,17 +246,6 @@ export default function AdminDashboard() {
                 <Users className="h-6 w-6 text-purple-600 mb-2" />
                 <p className="font-medium text-sm">View Customers</p>
                 <p className="text-xs text-gray-500">Manage users</p>
-              </button>
-              
-              {/* Settings Button */}
-              {/* WHY: onClick handler navigates to admin settings page */}
-              <button 
-                onClick={handleSettings}
-                className="p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors text-left cursor-pointer"
-              >
-                <Settings className="h-6 w-6 text-orange-600 mb-2" />
-                <p className="font-medium text-sm">Settings</p>
-                <p className="text-xs text-gray-500">Configure shop</p>
               </button>
               
               {/* Go to Main Page Button */}

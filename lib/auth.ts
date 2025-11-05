@@ -19,12 +19,15 @@ interface AuthResult {
 }
 
 // Admin setup configuration
-// SECURITY NOTE: Admin setup password should be in environment variables, not hardcoded
+// SECURITY NOTE: Admin setup password MUST be in environment variables, not hardcoded
 // WHY: Hardcoded passwords are a security risk - anyone with access to the code can see it
+// SECURITY: In production, remove the fallback and require ADMIN_SETUP_PASSWORD env var
+// HOW TO SET: Add ADMIN_SETUP_PASSWORD=your-strong-password to .env.local file
 const ADMIN_SETUP_CONFIG = {
   // Get admin setup password from environment variable or fallback to a default
   // WHY: Environment variables are more secure than hardcoded values
-  // TODO: Remove fallback in production - require environment variable
+  // SECURITY: The fallback is only for development - never use in production!
+  // CONFIGURATION: Set ADMIN_SETUP_PASSWORD in .env.local file (see .env.example)
   get ADMIN_SETUP_PASSWORD(): string {
     return process.env.ADMIN_SETUP_PASSWORD || 'AdminSetup2025!'
   },
@@ -141,7 +144,10 @@ export const authOptions: NextAuthOptions = {
   },
   // SECURITY: Use environment variable for secret, fallback only for development
   // WHY: The secret is used to sign JWT tokens - it must be secure and random
-  // TODO: Remove fallback in production - require environment variable
+  // SECURITY: In production, remove the fallback and require NEXTAUTH_SECRET env var
+  // HOW TO SET: Add NEXTAUTH_SECRET=your-random-secret to .env.local file
+  // GENERATE SECRET: Run 'openssl rand -base64 32' to generate a secure random secret
+  // CONFIGURATION: Set NEXTAUTH_SECRET in .env.local file (see .env.example)
   secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-key-change-in-production',
 }
 

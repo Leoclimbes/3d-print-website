@@ -149,13 +149,6 @@ export default function Navigation() {
                     </Link>
                   </DropdownMenuItem>
                   
-                  <DropdownMenuItem asChild>
-                    <Link href="/orders" className="flex items-center space-x-2">
-                      <Package className="h-4 w-4" />
-                      <span>My Orders</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  
                   <DropdownMenuSeparator />
                   
                   <DropdownMenuItem 
