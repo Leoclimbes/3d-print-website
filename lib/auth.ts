@@ -142,6 +142,14 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/login',
   },
+  // CRITICAL FOR VERCEL: NextAuth automatically reads NEXTAUTH_URL from environment
+  // WHY: NextAuth needs to know the full URL of your site to generate proper redirects and CSRF tokens
+  // WITHOUT THIS: You'll get 500 errors on Vercel because NextAuth can't determine the callback URL
+  // HOW TO SET: Add NEXTAUTH_URL=https://your-domain.vercel.app to Vercel environment variables
+  // AUTO-DETECTION: In development, NextAuth can auto-detect from request headers
+  // PRODUCTION: Must be explicitly set to your Vercel deployment URL
+  // NOTE: Include the protocol (https://) and don't include a trailing slash
+  // EXAMPLE: NEXTAUTH_URL=https://3d-print-website.vercel.app
   // SECURITY: Use environment variable for secret, fallback only for development
   // WHY: The secret is used to sign JWT tokens - it must be secure and random
   // SECURITY: In production, remove the fallback and require NEXTAUTH_SECRET env var
@@ -149,6 +157,27 @@ export const authOptions: NextAuthOptions = {
   // GENERATE SECRET: Run 'openssl rand -base64 32' to generate a secure random secret
   // CONFIGURATION: Set NEXTAUTH_SECRET in .env.local file (see .env.example)
   secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-key-change-in-production',
+}
+
+// VALIDATION: Check for required environment variables in production
+// WHY: This helps identify configuration issues before they cause 500 errors
+// WHEN: This runs when the module is loaded (server startup)
+if (process.env.NODE_ENV === 'production') {
+  // Check if NEXTAUTH_URL is set
+  // WHY: Without this, NextAuth will fail on Vercel with 500 errors
+  if (!process.env.NEXTAUTH_URL) {
+    logger.warn('NEXTAUTH_URL is not set in production - authentication may fail', {
+      hint: 'Set NEXTAUTH_URL in Vercel environment variables to your deployment URL (e.g., https://your-app.vercel.app)'
+    })
+  }
+  
+  // Check if NEXTAUTH_SECRET is set (warn if using fallback)
+  // WHY: Using a fallback secret in production is a security risk
+  if (!process.env.NEXTAUTH_SECRET) {
+    logger.warn('NEXTAUTH_SECRET is not set - using fallback secret (not secure for production)', {
+      hint: 'Generate a secret with: openssl rand -base64 32, then set it in Vercel environment variables'
+    })
+  }
 }
 
 export async function hashPassword(password: string): Promise<string> {
