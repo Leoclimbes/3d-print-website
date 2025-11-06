@@ -9,43 +9,19 @@ import { logger } from './logger'
 // DEFAULT: ./data (stores users.json in data/ directory)
 // HOW TO SET: Add DATABASE_PATH=/custom/path to .env.local file (optional)
 // SECURITY: The database path is not sensitive but allows customization per environment
-// CRITICAL FOR VERCEL: On Vercel serverless, file system is read-only except /tmp
-// WHY: Vercel's serverless functions have a read-only file system
-// FALLBACK: If file operations fail, we use in-memory storage (data won't persist)
 const DB_PATH = process.env.DATABASE_PATH 
   ? path.resolve(process.env.DATABASE_PATH)  // Use custom path from env var if provided
-  : process.env.VERCEL 
-    ? '/tmp/data'  // On Vercel, use /tmp which is writable (but not persistent)
-    : path.join(process.cwd(), 'data')         // Default to ./data directory
+  : path.join(process.cwd(), 'data')         // Default to ./data directory
 const USERS_FILE = path.join(DB_PATH, 'users.json')
 
-// Track if file system is writable
-// WHY: On Vercel, file system is read-only - we need to detect this
-let fileSystemWritable = true
-
 // Ensure data directory exists
-// WHY: We need the directory to exist before writing files
-// ERROR HANDLING: If this fails (e.g., on Vercel), we'll use in-memory storage
-try {
-  if (!fs.existsSync(DB_PATH)) {
-    fs.mkdirSync(DB_PATH, { recursive: true })
-  }
-  
-  // Initialize users file if it doesn't exist
-  // WHY: We need an empty array to start with
-  if (!fs.existsSync(USERS_FILE)) {
-    fs.writeFileSync(USERS_FILE, JSON.stringify([]))
-  }
-} catch (error) {
-  // CRITICAL FOR VERCEL: File system might be read-only
-  // WHY: On Vercel serverless, we can't write to most directories
-  // FALLBACK: Use in-memory storage (data won't persist between invocations)
-  logger.warn('File system not writable - using in-memory storage', {
-    error: (error as Error).message,
-    path: DB_PATH,
-    hint: 'On Vercel, consider using a database service (PostgreSQL, MongoDB, etc.)'
-  })
-  fileSystemWritable = false
+if (!fs.existsSync(DB_PATH)) {
+  fs.mkdirSync(DB_PATH, { recursive: true })
+}
+
+// Initialize users file if it doesn't exist
+if (!fs.existsSync(USERS_FILE)) {
+  fs.writeFileSync(USERS_FILE, JSON.stringify([]))
 }
 
 interface User {
@@ -68,35 +44,14 @@ class LocalDatabase {
   // Load users from JSON file into memory
   // WHY: We need to read the latest user data from the file before performing operations
   // CONCURRENCY NOTE: File-based DB has limitations with concurrent writes - consider a real DB for production
-  // CRITICAL FOR VERCEL: If file system is read-only, we skip file operations
-  // WHY: On Vercel, file system is read-only except /tmp - we need to handle this gracefully
   private loadUsers() {
-    // If file system is not writable, don't try to read from file
-    // WHY: On Vercel, we can't read from most directories
-    if (!fileSystemWritable) {
-      // Keep existing in-memory users (or empty array if first load)
-      // WHY: Without file system, we can only use in-memory data
-      return
-    }
-    
     try {
-      // Try to read from file
-      // WHY: If file exists and is readable, load it
-      if (fs.existsSync(USERS_FILE)) {
-        const data = fs.readFileSync(USERS_FILE, 'utf8')
-        this.users = JSON.parse(data)
-      } else {
-        // File doesn't exist - start with empty array
-        // WHY: First time running, no users exist yet
-        this.users = []
-      }
+      const data = fs.readFileSync(USERS_FILE, 'utf8')
+      this.users = JSON.parse(data)
     } catch (error) {
       // Use logger instead of console.error for consistent logging
       // WHY: Logger provides better formatting, timestamps, and can be configured for production
       logger.error('Error loading users from file', error as Error, { file: USERS_FILE })
-      // If file read fails, mark file system as not writable and use in-memory storage
-      // WHY: Don't keep trying to read from file if it fails
-      fileSystemWritable = false
       this.users = []
     }
   }
@@ -104,21 +59,7 @@ class LocalDatabase {
   // Save users from memory to JSON file
   // WHY: We need to persist changes to disk so they survive server restarts
   // CONCURRENCY NOTE: Multiple simultaneous saves could cause data loss - file locking would help
-  // CRITICAL FOR VERCEL: If file system is read-only, skip file write
-  // WHY: On Vercel, file system is read-only except /tmp - we can't persist to file
-  // FALLBACK: Data stays in memory only (won't persist between serverless invocations)
   private saveUsers() {
-    // If file system is not writable, skip file operations
-    // WHY: On Vercel, we can't write to most directories - don't try
-    if (!fileSystemWritable) {
-      // Log warning but don't throw error
-      // WHY: We want to continue working with in-memory data, just can't persist it
-      logger.warn('Cannot save users to file - file system not writable. Using in-memory storage only.', {
-        hint: 'On Vercel, consider using a database service (PostgreSQL, MongoDB, etc.)'
-      })
-      return // Exit early - data stays in memory only
-    }
-    
     try {
       // Write atomically by writing to a temp file first, then renaming
       // WHY: This prevents corruption if the process crashes mid-write
@@ -128,14 +69,7 @@ class LocalDatabase {
     } catch (error) {
       // Use logger for consistent error reporting
       logger.error('Error saving users to file', error as Error, { file: USERS_FILE })
-      // Mark file system as not writable for future operations
-      // WHY: Don't keep trying to write if it fails
-      fileSystemWritable = false
-      // Don't throw error - allow in-memory operations to continue
-      // WHY: Better to have in-memory data than crash the app
-      logger.warn('File save failed - switching to in-memory storage only', {
-        hint: 'On Vercel, consider using a database service (PostgreSQL, MongoDB, etc.)'
-      })
+      throw error // Re-throw so caller knows save failed
     }
   }
 
