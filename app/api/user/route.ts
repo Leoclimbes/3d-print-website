@@ -168,9 +168,13 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     // Handle validation errors separately from other errors
     // WHY: Validation errors should return 400 (bad request) not 500 (server error)
+    // ZodError has an 'issues' property (not 'errors') - array of ZodIssue objects
     if (error instanceof z.ZodError) {
+      // TypeScript type narrowing: after instanceof check, TypeScript knows error is ZodError
+      // Access the 'issues' property which contains validation error details
+      const zodError = error as z.ZodError
       return NextResponse.json(
-        { success: false, error: error.errors[0].message },
+        { success: false, error: zodError.issues[0].message },
         { status: 400 }
       )
     }
@@ -249,9 +253,13 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     // Handle validation errors
+    // ZodError has an 'issues' property (not 'errors') - array of ZodIssue objects
     if (error instanceof z.ZodError) {
+      // TypeScript type narrowing: after instanceof check, TypeScript knows error is ZodError
+      // Access the 'issues' property which contains validation error details
+      const zodError = error as z.ZodError
       return NextResponse.json(
-        { success: false, error: error.errors[0].message },
+        { success: false, error: zodError.issues[0].message },
         { status: 400 }
       )
     }
