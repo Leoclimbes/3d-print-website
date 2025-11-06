@@ -1,6 +1,13 @@
 'use client'
 
+// ============================================================================
+// ADMIN DASHBOARD - Overview of shop statistics and recent activity
+// ============================================================================
+// WHY: Admins need to see key metrics, recent orders, and sales trends
+// This page fetches real data from the orders API instead of using mock data
+
 import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { 
@@ -40,131 +47,390 @@ export default function AdminDashboard() {
   const router = useRouter()
 
   // ============================================================================
-  // MOCK SALES DATA - Last 7 days of revenue
+  // STATE MANAGEMENT - Track orders, products, and loading state
   // ============================================================================
-  // WHY: This data simulates daily sales revenue for the past week
-  // Format: { day: string, revenue: number } - matches recharts LineChart data format
-  // This would typically come from your backend API, but for now we use static mock data
-  const salesData = [
-    { day: 'Mon', revenue: 1850 },   // Monday's revenue
-    { day: 'Tue', revenue: 2120 },   // Tuesday's revenue
-    { day: 'Wed', revenue: 1980 },   // Wednesday's revenue
-    { day: 'Thu', revenue: 2340 },   // Thursday's revenue (higher sales day)
-    { day: 'Fri', revenue: 2890 },   // Friday's revenue (weekend shopping starts)
-    { day: 'Sat', revenue: 3120 },   // Saturday's revenue (peak day)
-    { day: 'Sun', revenue: 2650 }    // Sunday's revenue
-  ]
-
+  // WHY: We need to fetch orders and products from the API to calculate real statistics
+  
+  // Orders state - stores all orders fetched from API
+  // WHY: We need orders to calculate revenue, recent orders, top products, etc.
+  const [orders, setOrders] = useState<any[]>([])
+  
+  // Products state - stores all products fetched from API
+  // WHY: We need products to calculate total products count
+  const [products, setProducts] = useState<any[]>([])
+  
+  // Loading state - tracks if data is being fetched
+  // WHY: We need to show loading state while fetching data
+  const [isLoading, setIsLoading] = useState(true)
+  
   // ============================================================================
-  // MOCK DATA FOR THE DASHBOARD
+  // FETCH DATA - Load orders and products from API
   // ============================================================================
+  // WHY: We need to fetch real data to replace mock data with actual statistics
+  
+  // useEffect hook - runs when component mounts
+  // WHY: We want to fetch data as soon as the page loads
+  useEffect(() => {
+    // Fetch orders and products from API
+    // WHY: We need real data to calculate statistics
+    const fetchData = async () => {
+      try {
+        // Set loading state to true
+        // WHY: Show loading indicator while fetching
+        setIsLoading(true)
+        
+        // Fetch orders and products in parallel
+        // WHY: Fetching in parallel is faster than sequential fetches
+        const [ordersResponse, productsResponse] = await Promise.all([
+          fetch('/api/orders'),  // Fetch all orders
+          fetch('/api/products') // Fetch all products
+        ])
+        
+        // Check if orders request was successful
+        // WHY: Handle errors gracefully
+        if (!ordersResponse.ok) {
+          throw new Error('Failed to fetch orders')
+        }
+        
+        // Check if products request was successful
+        // WHY: Handle errors gracefully
+        if (!productsResponse.ok) {
+          throw new Error('Failed to fetch products')
+        }
+        
+        // Parse JSON responses
+        // WHY: API returns JSON data
+        const ordersData = await ordersResponse.json()
+        const productsData = await productsResponse.json()
+        
+        // Update state with fetched data
+        // WHY: Store data in state so we can use it to calculate statistics
+        setOrders(ordersData.orders || [])
+        setProducts(productsData.products || productsData || [])
+        
+      } catch (error) {
+        // Handle errors during fetch
+        // WHY: Network errors or API errors need to be handled gracefully
+        console.error('Error fetching dashboard data:', error)
+        // Set empty arrays on error
+        // WHY: Better to show empty data than crash the app
+        setOrders([])
+        setProducts([])
+      } finally {
+        // Set loading state to false
+        // WHY: Hide loading indicator after fetch completes (success or error)
+        setIsLoading(false)
+      }
+    }
+    
+    // Call fetch function
+    // WHY: Fetch data when component mounts
+    fetchData()
+  }, []) // Empty dependency array - only run once on mount
+  
+  // ============================================================================
+  // CALCULATE STATISTICS - Calculate real stats from orders and products
+  // ============================================================================
+  // WHY: We need to calculate actual statistics from real data instead of using mock data
+  
+  // Ensure orders and products are arrays (safety check)
+  // WHY: Prevent errors if API returns unexpected data structure
+  const ordersArray = Array.isArray(orders) ? orders : []
+  const productsArray = Array.isArray(products) ? products : []
+  
+  // Calculate total revenue from all paid orders
+  // WHY: Total revenue is sum of all paid orders
+  const totalRevenue = ordersArray
+    .filter(order => order && order.payment_status === 'paid')  // Only count paid orders
+    .reduce((sum, order) => sum + (order.total_amount || 0), 0)  // Sum all amounts
+  
+  // Format total revenue as currency string
+  // WHY: Display revenue in readable format (e.g., "$1,234.56")
+  const totalRevenueFormatted = `$${totalRevenue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`
+  
+  // Calculate total orders count
+  // WHY: Total orders is the count of all orders
+  const totalOrders = ordersArray.length
+  
+  // Format total orders as string with comma separator
+  // WHY: Display order count in readable format (e.g., "1,234")
+  const totalOrdersFormatted = totalOrders.toLocaleString()
+  
+  // Calculate total products count
+  // WHY: Total products is the count of all products
+  const totalProducts = productsArray.length
+  
+  // Format total products as string (with safety check)
+  // WHY: Display product count in readable format, ensure it's a number first
+  const totalProductsFormatted = (totalProducts || 0).toString()
+  
+  // Calculate unique customers (unique email addresses)
+  // WHY: Total customers is the count of unique customer emails
+  const uniqueCustomers = new Set(
+    ordersArray
+      .filter(order => order && order.customer_email)  // Filter out orders without email
+      .map(order => order.customer_email)  // Get email addresses
+  ).size
+  
+  // Format unique customers as string with comma separator
+  // WHY: Display customer count in readable format
+  const uniqueCustomersFormatted = (uniqueCustomers || 0).toLocaleString()
+  
+  // Stats array - calculated from real data
+  // WHY: Display real statistics instead of mock data
   const stats = [
     {
       title: 'Total Revenue',
-      value: '$12,345',
-      change: '+12.5%',
+      value: totalRevenueFormatted,
+      change: '',  // Could calculate change vs previous period if needed
       changeType: 'positive' as const,
       icon: DollarSign,
-      description: 'vs last month'
+      description: 'from all orders'
     },
     {
       title: 'Total Orders',
-      value: '1,234',
-      change: '+8.2%',
+      value: totalOrdersFormatted,
+      change: '',
       changeType: 'positive' as const,
       icon: ShoppingCart,
-      description: 'vs last month'
+      description: 'total orders'
     },
     {
       title: 'Total Products',
-      value: '89',
-      change: '+3',
+      value: totalProductsFormatted,
+      change: '',
       changeType: 'positive' as const,
       icon: Package,
       description: 'active products'
     },
     {
       title: 'Total Customers',
-      value: '456',
-      change: '+15.3%',
+      value: uniqueCustomersFormatted,
+      change: '',
       changeType: 'positive' as const,
       icon: Users,
-      description: 'vs last month'
+      description: 'unique customers'
     }
   ]
-
-  const recentOrders = [
-    {
-      id: 'ORD-001',
-      customer: 'John Doe',
-      amount: '$89.99',
-      status: 'processing',
-      date: '2024-01-15'
-    },
-    {
-      id: 'ORD-002',
-      customer: 'Jane Smith',
-      amount: '$124.50',
-      status: 'shipped',
-      date: '2024-01-14'
-    },
-    {
-      id: 'ORD-003',
-      customer: 'Bob Johnson',
-      amount: '$67.25',
-      status: 'delivered',
-      date: '2024-01-13'
-    },
-    {
-      id: 'ORD-004',
-      customer: 'Alice Brown',
-      amount: '$156.75',
-      status: 'pending',
-      date: '2024-01-12'
+  
+  // ============================================================================
+  // CALCULATE SALES DATA - Last 7 days of revenue
+  // ============================================================================
+  // WHY: We need to calculate daily revenue for the sales chart from real orders
+  
+  // Get last 7 days of dates
+  // WHY: We want to show revenue for the last 7 days
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    // Calculate date for each day (most recent first, going backwards)
+    // WHY: We want today as the last day, and 6 days ago as the first day
+    const date = new Date()
+    date.setDate(date.getDate() - (6 - i))  // Start from 6 days ago, end today
+    return date
+  })
+  
+  // Calculate revenue for each day
+  // WHY: We need daily revenue data for the sales chart
+  const salesData = last7Days.map(date => {
+    // Get day name (Mon, Tue, Wed, etc.)
+    // WHY: Chart needs day labels
+    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' })
+    
+    // Calculate revenue for this day
+    // WHY: We need to sum all paid orders created on this day
+    const dayStart = new Date(date)
+    dayStart.setHours(0, 0, 0, 0)  // Start of day (midnight)
+    
+    const dayEnd = new Date(date)
+    dayEnd.setHours(23, 59, 59, 999)  // End of day (11:59:59 PM)
+    
+    // Filter orders created on this day and that are paid
+    // WHY: Only count paid orders for revenue
+    const dayOrders = ordersArray.filter(order => {
+      // Safety check - ensure order exists and has created_at
+      if (!order || !order.created_at) return false
+      
+      const orderDate = new Date(order.created_at)
+      return order.payment_status === 'paid' && 
+             orderDate >= dayStart && 
+             orderDate <= dayEnd
+    })
+    
+    // Sum revenue for this day
+    // WHY: Calculate total revenue for the day
+    const dayRevenue = dayOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0)
+    
+    // Return day data for chart
+    // WHY: Chart needs { day, revenue } format
+    return {
+      day: dayName,
+      revenue: dayRevenue
     }
-  ]
-
-  const topProducts = [
-    { name: 'Custom Phone Stand', sales: 45, revenue: '$584.55' },
-    { name: 'Dragon Figurine', sales: 32, revenue: '$799.68' },
-    { name: 'Cable Tray', sales: 28, revenue: '$531.72' },
-    { name: 'Gaming Keycap', sales: 24, revenue: '$359.76' }
-  ]
-
-  const recentActivities = [
-    {
-      id: 1,
-      type: 'order',
-      message: 'New order #ORD-005 received',
-      time: '2 minutes ago',
-      icon: ShoppingCart,
-      color: 'text-blue-600'
-    },
-    {
-      id: 2,
-      type: 'product',
-      message: 'Product "Custom Headphone Stand" added',
-      time: '15 minutes ago',
-      icon: Package,
-      color: 'text-green-600'
-    },
-    {
-      id: 3,
-      type: 'customer',
-      message: 'New customer registration',
-      time: '1 hour ago',
-      icon: Users,
-      color: 'text-purple-600'
-    },
-    {
-      id: 4,
-      type: 'order',
-      message: 'Order #ORD-003 marked as delivered',
-      time: '2 hours ago',
-      icon: CheckCircle,
-      color: 'text-green-600'
+  })
+  
+  // ============================================================================
+  // GET RECENT ORDERS - Latest orders from database
+  // ============================================================================
+  // WHY: Display the most recent orders instead of mock data
+  
+  // Get recent orders (last 4 orders, sorted by creation date descending)
+  // WHY: Show the most recent orders first
+  const recentOrders = ordersArray
+    .filter(order => order && order.created_at)  // Filter out invalid orders
+    .sort((a, b) => {
+      // Sort by creation date (newest first)
+      // WHY: Most recent orders should appear first
+      const dateA = new Date(a.created_at).getTime()
+      const dateB = new Date(b.created_at).getTime()
+      return dateB - dateA  // Descending order (newest first)
+    })
+    .slice(0, 4)  // Get only first 4 orders
+    .map(order => ({
+      // Format order data for display
+      // WHY: Convert order data to display format
+      id: order.id || 'Unknown',
+      customer: order.customer_name || 'Unknown Customer',
+      amount: `$${(order.total_amount || 0).toFixed(2)}`,
+      status: order.status || 'pending',
+      date: new Date(order.created_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })
+    }))
+  
+  // ============================================================================
+  // CALCULATE TOP PRODUCTS - Best selling products from orders
+  // ============================================================================
+  // WHY: Display top products based on actual sales from orders
+  
+  // Calculate product sales from order items
+  // WHY: We need to count how many times each product was sold
+  const productSales = new Map<string, { name: string; sales: number; revenue: number }>()
+  
+  // Loop through all orders to count product sales
+  // WHY: We need to aggregate sales data from all orders
+  ordersArray.forEach(order => {
+    // Safety check - ensure order exists and is paid
+    // WHY: Only count products from paid orders
+    if (order && order.payment_status === 'paid' && Array.isArray(order.items)) {
+      // Loop through each item in the order
+      // WHY: Each item represents a product sale
+      order.items.forEach((item: any) => {
+        // Safety check - ensure item exists
+        // WHY: Skip invalid items
+        if (!item) return
+        
+        // Get product name (use product_name from order item)
+        // WHY: Order items have product_name as a snapshot
+        const productName = item.product_name || 'Unknown Product'
+        
+        // Get or create product sales entry
+        // WHY: We need to track sales per product
+        const existing = productSales.get(productName) || { name: productName, sales: 0, revenue: 0 }
+        
+        // Update sales count (add quantity)
+        // WHY: Count how many units were sold
+        existing.sales += item.quantity || 0
+        
+        // Update revenue (add item total)
+        // WHY: Calculate total revenue per product
+        existing.revenue += (item.quantity || 0) * (item.price_at_purchase || 0)
+        
+        // Save back to map
+        // WHY: Update the product sales data
+        productSales.set(productName, existing)
+      })
     }
-  ]
+  })
+  
+  // Convert map to array and sort by sales (descending)
+  // WHY: Get top products sorted by number of sales
+  const topProducts = Array.from(productSales.values())
+    .sort((a, b) => b.sales - a.sales)  // Sort by sales count (highest first)
+    .slice(0, 4)  // Get only top 4 products
+    .map(product => ({
+      // Format product data for display
+      // WHY: Convert to display format with formatted revenue
+      name: product.name,
+      sales: product.sales,
+      revenue: `$${product.revenue.toFixed(2)}`
+    }))
+  
+  // ============================================================================
+  // GET RECENT ACTIVITIES - Recent order updates and changes
+  // ============================================================================
+  // WHY: Display recent activities based on actual order updates
+  
+  // Get recent activities from orders (last 4 orders)
+  // WHY: Show recent activities based on order updates
+  const recentActivities = ordersArray
+    .filter(order => order && (order.updated_at || order.created_at))  // Filter out invalid orders
+    .sort((a, b) => {
+      // Sort by updated date (newest first)
+      // WHY: Most recent activities should appear first
+      const dateA = new Date(a.updated_at || a.created_at).getTime()
+      const dateB = new Date(b.updated_at || b.created_at).getTime()
+      return dateB - dateA  // Descending order (newest first)
+    })
+    .slice(0, 4)  // Get only first 4 activities
+    .map((order, index) => {
+      // Calculate time ago (e.g., "2 minutes ago")
+      // WHY: Display relative time for better UX
+      const updatedDate = new Date(order.updated_at || order.created_at)
+      const now = new Date()
+      const diffMs = now.getTime() - updatedDate.getTime()
+      const diffMins = Math.floor(diffMs / 60000)  // Minutes
+      const diffHours = Math.floor(diffMs / 3600000)  // Hours
+      const diffDays = Math.floor(diffMs / 86400000)  // Days
+      
+      // Format time ago string
+      // WHY: Human-readable time format
+      let timeAgo = ''
+      if (diffMins < 1) {
+        timeAgo = 'Just now'
+      } else if (diffMins < 60) {
+        timeAgo = `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`
+      } else if (diffHours < 24) {
+        timeAgo = `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`
+      } else {
+        timeAgo = `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`
+      }
+      
+      // Determine activity message and icon based on order status
+      // WHY: Different messages for different order statuses
+      let message = ''
+      let icon = ShoppingCart
+      let color = 'text-blue-600'
+      
+      if (order.status === 'delivered') {
+        message = `Order ${order.id} marked as delivered`
+        icon = CheckCircle
+        color = 'text-green-600'
+      } else if (order.status === 'shipped') {
+        message = `Order ${order.id} shipped`
+        icon = Package
+        color = 'text-blue-600'
+      } else if (order.status === 'processing') {
+        message = `Order ${order.id} is being processed`
+        icon = Clock
+        color = 'text-yellow-600'
+      } else {
+        message = `New order ${order.id} received`
+        icon = ShoppingCart
+        color = 'text-blue-600'
+      }
+      
+      // Return activity object
+      // WHY: Format activity data for display
+      return {
+        id: order.id,
+        type: 'order',
+        message: message,
+        time: timeAgo,
+        icon: icon,
+        color: color
+      }
+    })
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -200,6 +466,31 @@ export default function AdminDashboard() {
   // This allows admins to quickly switch from admin dashboard to the customer-facing homepage
   const handleGoToMainPage = () => {
     router.push('/')  // Navigate to root route which is the main/home page
+  }
+
+  // ============================================================================
+  // LOADING STATE - Show loading indicator while fetching data
+  // ============================================================================
+  // WHY: Users should see a loading state while data is being fetched
+  
+  // Show loading state if data is still loading
+  // WHY: Better UX to show loading indicator than empty dashboard
+  if (isLoading) {
+    return (
+      <div className="p-0">
+        <div className="px-6 pt-6 mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-2">Loading dashboard data...</p>
+        </div>
+        <div className="px-6">
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-gray-500">Loading statistics and orders...</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -403,8 +694,14 @@ export default function AdminDashboard() {
               <CardDescription>Latest updates from your shop</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentActivities.map((activity) => {
+              {recentActivities.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No recent activity</p>
+                  <p className="text-sm mt-2">Activity will appear here as orders are placed and updated</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {recentActivities.map((activity) => {
                   const Icon = activity.icon
                   return (
                     <div key={activity.id} className="flex items-start space-x-3">
@@ -417,8 +714,9 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   )
-                })}
-              </div>
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -442,8 +740,14 @@ export default function AdminDashboard() {
               <CardDescription>Latest customer orders</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentOrders.map((order) => (
+              {recentOrders.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No orders yet</p>
+                  <p className="text-sm mt-2">Orders will appear here once customers make purchases</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {recentOrders.map((order) => (
                   <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
@@ -459,8 +763,9 @@ export default function AdminDashboard() {
                       <p className="font-semibold text-sm">{order.amount}</p>
                     </div>
                   </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -479,8 +784,14 @@ export default function AdminDashboard() {
               <CardDescription>Best performing products</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {topProducts.map((product, index) => (
+              {topProducts.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No product sales yet</p>
+                  <p className="text-sm mt-2">Top products will appear here once orders are placed</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {topProducts.map((product, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="flex-shrink-0">
@@ -497,8 +808,9 @@ export default function AdminDashboard() {
                       <p className="font-semibold text-sm text-green-600">{product.revenue}</p>
                     </div>
                   </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

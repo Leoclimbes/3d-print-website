@@ -1,6 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+// ============================================================================
+// ADMIN ORDERS PAGE - Manage and view customer orders
+// ============================================================================
+// WHY: Admins need to see all orders, filter them, view details, and update status
+// This page fetches orders from the API and displays them in a table
+
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -62,214 +68,120 @@ interface Order {
 }
 
 // ============================================================================
-// MOCK DATA - Sample orders for demonstration
+// MOCK DATA REMOVED - Now fetching from API
 // ============================================================================
-// WHY: Mock data allows us to build the UI without needing a database connection
-// This will be replaced with real API calls later when we connect to Supabase
-
-const mockOrders: Order[] = [
-  {
-    id: 'ORD-001',
-    user_id: 'user-1',
-    customer_name: 'John Doe',
-    customer_email: 'john.doe@example.com',
-    total_amount: 87.97,
-    status: 'processing',
-    payment_status: 'paid',
-    stripe_payment_id: 'pi_1234567890',
-    shipping_address: {
-      name: 'John Doe',
-      line1: '123 Main Street',
-      line2: 'Apt 4B',
-      city: 'New York',
-      state: 'NY',
-      postal_code: '10001',
-      country: 'US'
-    },
-    items: [
-      {
-        id: 'item-1',
-        product_id: 'prod-1',
-        product_name: 'Custom Phone Stand',
-        product_image: '/api/placeholder/100/100',
-        quantity: 2,
-        price_at_purchase: 12.99
-      },
-      {
-        id: 'item-2',
-        product_id: 'prod-2',
-        product_name: 'Cable Tray',
-        product_image: '/api/placeholder/100/100',
-        quantity: 1,
-        price_at_purchase: 18.99
-      },
-      {
-        id: 'item-3',
-        product_id: 'prod-3',
-        product_name: 'Desk Organizer',
-        product_image: '/api/placeholder/100/100',
-        quantity: 1,
-        price_at_purchase: 43.00
-      }
-    ],
-    created_at: '2024-01-15T10:30:00Z',
-    updated_at: '2024-01-15T11:00:00Z'
-  },
-  {
-    id: 'ORD-002',
-    user_id: 'user-2',
-    customer_name: 'Jane Smith',
-    customer_email: 'jane.smith@example.com',
-    total_amount: 124.98,
-    status: 'shipped',
-    payment_status: 'paid',
-    stripe_payment_id: 'pi_0987654321',
-    shipping_address: {
-      name: 'Jane Smith',
-      line1: '456 Oak Avenue',
-      city: 'Los Angeles',
-      state: 'CA',
-      postal_code: '90001',
-      country: 'US'
-    },
-    items: [
-      {
-        id: 'item-4',
-        product_id: 'prod-4',
-        product_name: 'Dragon Figurine',
-        product_image: '/api/placeholder/100/100',
-        quantity: 1,
-        price_at_purchase: 24.99
-      },
-      {
-        id: 'item-5',
-        product_id: 'prod-5',
-        product_name: 'Gaming Controller Holder',
-        product_image: '/api/placeholder/100/100',
-        quantity: 2,
-        price_at_purchase: 49.99
-      }
-    ],
-    created_at: '2024-01-14T14:20:00Z',
-    updated_at: '2024-01-15T09:15:00Z'
-  },
-  {
-    id: 'ORD-003',
-    user_id: 'user-3',
-    customer_name: 'Bob Johnson',
-    customer_email: 'bob.johnson@example.com',
-    total_amount: 62.97,
-    status: 'pending',
-    payment_status: 'pending',
-    stripe_payment_id: null,
-    shipping_address: {
-      name: 'Bob Johnson',
-      line1: '789 Pine Road',
-      city: 'Chicago',
-      state: 'IL',
-      postal_code: '60601',
-      country: 'US'
-    },
-    items: [
-      {
-        id: 'item-6',
-        product_id: 'prod-6',
-        product_name: 'Custom Phone Stand',
-        product_image: '/api/placeholder/100/100',
-        quantity: 3,
-        price_at_purchase: 12.99
-      }
-    ],
-    created_at: '2024-01-16T08:45:00Z',
-    updated_at: '2024-01-16T08:45:00Z'
-  },
-  {
-    id: 'ORD-004',
-    user_id: 'user-4',
-    customer_name: 'Alice Williams',
-    customer_email: 'alice.williams@example.com',
-    total_amount: 43.00,
-    status: 'delivered',
-    payment_status: 'paid',
-    stripe_payment_id: 'pi_abcdefghij',
-    shipping_address: {
-      name: 'Alice Williams',
-      line1: '321 Elm Street',
-      line2: 'Suite 200',
-      city: 'Houston',
-      state: 'TX',
-      postal_code: '77001',
-      country: 'US'
-    },
-    items: [
-      {
-        id: 'item-7',
-        product_id: 'prod-7',
-        product_name: 'Desk Organizer',
-        product_image: '/api/placeholder/100/100',
-        quantity: 1,
-        price_at_purchase: 43.00
-      }
-    ],
-    created_at: '2024-01-10T16:30:00Z',
-    updated_at: '2024-01-13T10:00:00Z'
-  },
-  {
-    id: 'ORD-005',
-    user_id: 'user-5',
-    customer_name: 'Charlie Brown',
-    customer_email: 'charlie.brown@example.com',
-    total_amount: 99.96,
-    status: 'cancelled',
-    payment_status: 'refunded',
-    stripe_payment_id: 'pi_klmnopqrst',
-    shipping_address: {
-      name: 'Charlie Brown',
-      line1: '654 Maple Drive',
-      city: 'Phoenix',
-      state: 'AZ',
-      postal_code: '85001',
-      country: 'US'
-    },
-    items: [
-      {
-        id: 'item-8',
-        product_id: 'prod-8',
-        product_name: 'Gaming Keycap Set',
-        product_image: '/api/placeholder/100/100',
-        quantity: 2,
-        price_at_purchase: 49.98
-      }
-    ],
-    created_at: '2024-01-12T11:20:00Z',
-    updated_at: '2024-01-13T14:30:00Z'
-  }
-]
+// WHY: Mock data has been removed - orders are now fetched from /api/orders
+// This ensures we're always showing real orders from the database
 
 export default function OrdersPage() {
-  // State management - tracks filters, selected order, and UI state
-  // WHY: React state allows the UI to react to user interactions
+  // ============================================================================
+  // STATE MANAGEMENT - Track filters, orders, loading, and UI state
+  // ============================================================================
+  // WHY: React state allows the UI to react to user interactions and API data
+  
+  // Filter state - tracks search term and filters
+  // WHY: Users need to filter orders to find specific ones quickly
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('all')
+  
+  // Orders state - stores orders fetched from API
+  // WHY: We need to store orders in state so we can display and filter them
+  const [orders, setOrders] = useState<Order[]>([])
+  
+  // Loading state - tracks if orders are being fetched
+  // WHY: We need to show loading state while fetching orders from API
+  const [isLoading, setIsLoading] = useState(true)
+  
+  // Error state - tracks if there was an error fetching orders
+  // WHY: We need to show error message if API call fails
+  const [error, setError] = useState<string | null>(null)
+  
+  // Modal state - tracks selected order and modal visibility
+  // WHY: We need to show order details in a modal when user clicks "View"
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false)
-
+  
+  // ============================================================================
+  // FETCH ORDERS - Load orders from API on component mount
+  // ============================================================================
+  // WHY: We need to fetch orders from the API when the page loads
+  
+  // useEffect hook - runs when component mounts
+  // WHY: We want to fetch orders as soon as the page loads
+  useEffect(() => {
+    // Fetch orders from API
+    // WHY: We need to get real orders from the database, not mock data
+    const fetchOrders = async () => {
+      try {
+        // Set loading state to true
+        // WHY: Show loading indicator while fetching
+        setIsLoading(true)
+        setError(null) // Clear any previous errors
+        
+        // Fetch orders from API endpoint
+        // WHY: GET /api/orders returns all orders for admin
+        const response = await fetch('/api/orders')
+        
+        // Check if request was successful
+        // WHY: Handle errors gracefully
+        if (!response.ok) {
+          // If response is not OK, throw error
+          // WHY: We need to handle API errors
+          throw new Error(`Failed to fetch orders: ${response.statusText}`)
+        }
+        
+        // Parse JSON response
+        // WHY: API returns JSON data
+        const data = await response.json()
+        
+        // Update orders state with fetched orders
+        // WHY: Store orders in state so we can display them
+        setOrders(data.orders || [])
+        
+      } catch (err) {
+        // Handle errors during fetch
+        // WHY: Network errors or API errors need to be handled gracefully
+        console.error('Error fetching orders:', err)
+        setError(err instanceof Error ? err.message : 'Failed to fetch orders')
+        setOrders([]) // Set empty array on error
+      } finally {
+        // Set loading state to false
+        // WHY: Hide loading indicator after fetch completes (success or error)
+        setIsLoading(false)
+      }
+    }
+    
+    // Call fetch function
+    // WHY: Fetch orders when component mounts
+    fetchOrders()
+  }, []) // Empty dependency array - only run once on mount
+  
+  // ============================================================================
+  // FILTER ORDERS - Filter orders based on search and filters
+  // ============================================================================
+  // WHY: Users need to filter orders to find specific ones quickly
+  
   // Filter orders based on search term, status, and payment status
   // WHY: Users need to filter orders to find specific ones quickly
-  const filteredOrders = mockOrders.filter(order => {
+  const filteredOrders = orders.filter(order => {
     // Search filter - matches order ID, customer name, or email
+    // WHY: Users should be able to search by order ID, customer name, or email
     const matchesSearch = 
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customer_email.toLowerCase().includes(searchTerm.toLowerCase())
     
     // Status filter - matches order status or shows all
+    // WHY: Users should be able to filter by order status (pending, processing, etc.)
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter
     
     // Payment status filter - matches payment status or shows all
+    // WHY: Users should be able to filter by payment status (paid, pending, etc.)
     const matchesPaymentStatus = paymentStatusFilter === 'all' || order.payment_status === paymentStatusFilter
     
+    // Return true if order matches all filters
+    // WHY: Order must match search term AND status filter AND payment status filter
     return matchesSearch && matchesStatus && matchesPaymentStatus
   })
 
@@ -348,12 +260,63 @@ export default function OrdersPage() {
     setIsOrderModalOpen(true)
   }
 
-  // Update order status (mock implementation)
+  // ============================================================================
+  // UPDATE ORDER STATUS - Update order status via API
+  // ============================================================================
+  // WHY: Admins need to update order status as orders progress (e.g., mark as shipped)
+  
+  // Update order status - sends API request to update order
   // WHY: Admins need to update order status as orders progress
   const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
-    // TODO: Implement API call to update order status in database
-    console.log(`Updating order ${orderId} to status: ${newStatus}`)
-    alert(`Order ${orderId} status updated to ${newStatus}`)
+    try {
+      // Send PUT request to update order
+      // WHY: PUT /api/orders/[id] updates the order status
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus,  // Update order status
+        }),
+      })
+      
+      // Check if request was successful
+      // WHY: Handle errors gracefully
+      if (!response.ok) {
+        // If response is not OK, throw error
+        // WHY: We need to handle API errors
+        throw new Error(`Failed to update order: ${response.statusText}`)
+      }
+      
+      // Parse JSON response
+      // WHY: API returns updated order
+      const data = await response.json()
+      
+      // Update local orders state with updated order
+      // WHY: Update UI to reflect the change without refetching all orders
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.id === orderId ? data.order : order  // Replace updated order
+        )
+      )
+      
+      // Update selected order if it's the one being updated
+      // WHY: If modal is open showing this order, update it too
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder(data.order)
+      }
+      
+      // Show success message (optional - you might want to use a toast notification)
+      // WHY: Give user feedback that update was successful
+      console.log(`Order ${orderId} status updated to ${newStatus}`)
+      
+    } catch (err) {
+      // Handle errors during update
+      // WHY: Network errors or API errors need to be handled gracefully
+      console.error('Error updating order status:', err)
+      alert(`Failed to update order: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
   }
 
   return (
@@ -437,32 +400,51 @@ export default function OrdersPage() {
         <CardHeader>
           <CardTitle>Order List</CardTitle>
           <CardDescription>
-            Showing {filteredOrders.length} of {mockOrders.length} orders
+            Showing {filteredOrders.length} of {orders.length} orders
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Items</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredOrders.length === 0 ? (
+          {/* Loading State */}
+          {/* WHY: Show loading indicator while fetching orders */}
+          {isLoading && (
+            <div className="text-center py-8 text-gray-500">
+              Loading orders...
+            </div>
+          )}
+          
+          {/* Error State */}
+          {/* WHY: Show error message if API call fails */}
+          {!isLoading && error && (
+            <div className="text-center py-8 text-red-500">
+              Error: {error}
+            </div>
+          )}
+          
+          {/* Orders Table */}
+          {/* WHY: Display orders in a table when loaded */}
+          {!isLoading && !error && (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                      No orders found
-                    </TableCell>
+                    <TableHead>Order ID</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Items</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Payment</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ) : (
+                </TableHeader>
+                <TableBody>
+                  {filteredOrders.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                        No orders found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
                   filteredOrders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell className="font-medium">{order.id}</TableCell>
@@ -502,10 +484,11 @@ export default function OrdersPage() {
                       </TableCell>
                     </TableRow>
                   ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
 

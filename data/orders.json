@@ -1,0 +1,64 @@
+[
+  {
+    "id": "ORDER-1762387010305-8y73js76s",
+    "user_id": "user_1761699238491_85g5ja933",
+    "customer_name": "leo everroad",
+    "customer_email": "leoclimbes2@gmail.com",
+    "total_amount": 10.99,
+    "status": "pending",
+    "payment_status": "paid",
+    "stripe_payment_id": null,
+    "shipping_address": {
+      "name": "leo everroad",
+      "line1": "5022 Arbor circle",
+      "line2": "",
+      "city": "Omaha",
+      "state": "Nebraska",
+      "postal_code": "68106",
+      "country": "US"
+    },
+    "items": [
+      {
+        "id": "item-ORDER-1762387010305-8y73js76s-0",
+        "product_id": "2",
+        "product_name": "Chicken cable holder",
+        "product_image": "/uploads/products/3d-printed-office-supplies-02-1762045514326-4slz4j8.png",
+        "quantity": 1,
+        "price_at_purchase": 10.99
+      }
+    ],
+    "created_at": "2025-11-05T23:56:50.305Z",
+    "updated_at": "2025-11-05T23:56:50.305Z"
+  },
+  {
+    "id": "ORDER-1762387201721-coxqrny30",
+    "user_id": "user_1761699238491_85g5ja933",
+    "customer_name": "timy tom",
+    "customer_email": "jeinnifermarieday@gmail.com",
+    "total_amount": 10.99,
+    "status": "pending",
+    "payment_status": "paid",
+    "stripe_payment_id": null,
+    "shipping_address": {
+      "name": "timy tom",
+      "line1": "5022 arbor circle",
+      "line2": "",
+      "city": "Omaha",
+      "state": "Nebraska",
+      "postal_code": "68106",
+      "country": "US"
+    },
+    "items": [
+      {
+        "id": "item-ORDER-1762387201721-coxqrny30-0",
+        "product_id": "2",
+        "product_name": "Chicken cable holder",
+        "product_image": "/uploads/products/3d-printed-office-supplies-02-1762045514326-4slz4j8.png",
+        "quantity": 1,
+        "price_at_purchase": 10.99
+      }
+    ],
+    "created_at": "2025-11-06T00:00:01.721Z",
+    "updated_at": "2025-11-06T00:00:01.721Z"
+  }
+]

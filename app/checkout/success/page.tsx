@@ -28,28 +28,85 @@ export default function CheckoutSuccessPage() {
   // WHY: We need to display the order ID to the user
   const orderId = searchParams.get('orderId') || 'N/A'
   
-  // State for order details (if we want to fetch them)
-  // WHY: We might want to show more order details in the future
+  // ============================================================================
+  // ORDER DETAILS STATE - Track order details and loading state
+  // ============================================================================
+  // WHY: We need to fetch and display full order details after payment
+  
+  // State for order details - stores the full order object
+  // WHY: We want to show order items, shipping address, and other details
   const [orderDetails, setOrderDetails] = useState<any>(null)
   
+  // Loading state - tracks if order details are being fetched
+  // WHY: We need to show loading state while fetching order details
+  const [isLoading, setIsLoading] = useState(true)
+  
+  // Error state - tracks if there was an error fetching order details
+  // WHY: We need to show error message if API call fails
+  const [error, setError] = useState<string | null>(null)
+  
   // ============================================================================
-  // ORDER DETAILS FETCH - Fetch order details (optional)
+  // ORDER DETAILS FETCH - Fetch order details from API
   // ============================================================================
+  // WHY: We want to show order items, shipping address, and other details
   
   // Fetch order details if order ID is available
-  // WHY: We might want to show order items, shipping address, etc.
-  // This is optional - for now we just show the order ID
+  // WHY: We want to show order items, shipping address, etc.
   useEffect(() => {
-    // If order ID is available, we could fetch order details here
-    // WHY: In production, you might want to fetch full order details
-    // For now, we just use the order ID from URL
+    // Only fetch if order ID is available and not 'N/A'
+    // WHY: We need a valid order ID to fetch order details
     if (orderId && orderId !== 'N/A') {
-      // In production, you would fetch order details from API:
-      // fetch(`/api/orders/${orderId}`)
-      //   .then(res => res.json())
-      //   .then(data => setOrderDetails(data))
+      // Fetch order details from API
+      // WHY: GET /api/orders/[id] returns full order details
+      const fetchOrderDetails = async () => {
+        try {
+          // Set loading state to true
+          // WHY: Show loading indicator while fetching
+          setIsLoading(true)
+          setError(null) // Clear any previous errors
+          
+          // Fetch order from API endpoint
+          // WHY: We need to get full order details from the database
+          const response = await fetch(`/api/orders/${orderId}`)
+          
+          // Check if request was successful
+          // WHY: Handle errors gracefully
+          if (!response.ok) {
+            // If response is not OK, throw error
+            // WHY: We need to handle API errors
+            throw new Error(`Failed to fetch order: ${response.statusText}`)
+          }
+          
+          // Parse JSON response
+          // WHY: API returns JSON data
+          const data = await response.json()
+          
+          // Update order details state with fetched order
+          // WHY: Store order details in state so we can display them
+          setOrderDetails(data.order || null)
+          
+        } catch (err) {
+          // Handle errors during fetch
+          // WHY: Network errors or API errors need to be handled gracefully
+          console.error('Error fetching order details:', err)
+          setError(err instanceof Error ? err.message : 'Failed to fetch order details')
+          setOrderDetails(null) // Set to null on error
+        } finally {
+          // Set loading state to false
+          // WHY: Hide loading indicator after fetch completes (success or error)
+          setIsLoading(false)
+        }
+      }
+      
+      // Call fetch function
+      // WHY: Fetch order details when order ID is available
+      fetchOrderDetails()
+    } else {
+      // If no order ID, set loading to false
+      // WHY: No need to show loading if there's no order ID
+      setIsLoading(false)
     }
-  }, [orderId])
+  }, [orderId]) // Re-fetch if order ID changes
   
   // ============================================================================
   // MAIN RENDER - Display success message
@@ -98,6 +155,65 @@ export default function CheckoutSuccessPage() {
                 Save this order ID for your records
               </p>
             </div>
+
+            {/* Order Details - Show if loaded */}
+            {/* WHY: Display order items and shipping address if available */}
+            {isLoading && (
+              <div className="text-center py-8 text-gray-500">
+                Loading order details...
+              </div>
+            )}
+            
+            {error && (
+              <div className="text-center py-8 text-red-500">
+                Error loading order details: {error}
+              </div>
+            )}
+            
+            {!isLoading && !error && orderDetails && (
+              <div className="space-y-4 mb-8 text-left max-w-md mx-auto">
+                {/* Order Items */}
+                {/* WHY: Show what products were ordered */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="font-semibold text-gray-900 mb-3">Order Items</p>
+                  <div className="space-y-2">
+                    {orderDetails.items?.map((item: any, index: number) => (
+                      <div key={index} className="flex justify-between text-sm">
+                        <span className="text-gray-600">
+                          {item.quantity} × {item.product_name}
+                        </span>
+                        <span className="font-medium">
+                          ${(item.quantity * item.price_at_purchase).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="border-t pt-2 mt-2 flex justify-between font-semibold">
+                      <span>Total:</span>
+                      <span>${orderDetails.total_amount?.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Shipping Address */}
+                {/* WHY: Show shipping address for confirmation */}
+                {orderDetails.shipping_address && (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="font-semibold text-gray-900 mb-2">Shipping Address</p>
+                    <div className="text-sm text-gray-600 space-y-1">
+                      <div>{orderDetails.shipping_address.name}</div>
+                      <div>{orderDetails.shipping_address.line1}</div>
+                      {orderDetails.shipping_address.line2 && (
+                        <div>{orderDetails.shipping_address.line2}</div>
+                      )}
+                      <div>
+                        {orderDetails.shipping_address.city}, {orderDetails.shipping_address.state} {orderDetails.shipping_address.postal_code}
+                      </div>
+                      <div>{orderDetails.shipping_address.country}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Next Steps Information */}
             {/* WHY: Users should know what happens next */}
