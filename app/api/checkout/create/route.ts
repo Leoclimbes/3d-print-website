@@ -254,7 +254,11 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       // If session check fails, continue with guest checkout (userId = null)
       // WHY: Don't fail the order if session check fails
-      logger.warn('Error getting session for order', error as Error)
+      // logger.warn() only accepts 2 arguments: message and context (not error separately)
+      logger.warn('Error getting session for order', { 
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      })
     }
     
     // ========================================================================

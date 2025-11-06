@@ -132,7 +132,13 @@ export async function deleteImageFromLocal(imageUrl: string): Promise<void> {
   } catch (error) {
     // Log error but don't throw - deletion failure shouldn't break the app
     // WHY: If file deletion fails (maybe already deleted), it's not critical
-    logger.warn('Error deleting image from local storage', error as Error, { imageUrl })
+    // logger.warn() only accepts 2 arguments: message and context (not error separately)
+    // Include error information in the context object along with imageUrl
+    logger.warn('Error deleting image from local storage', { 
+      imageUrl,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    })
   }
 }
 

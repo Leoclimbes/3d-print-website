@@ -51,7 +51,11 @@ export async function GET(
     } catch (error) {
       // If session check fails, continue without session (guest checkout)
       // WHY: Don't fail if session check fails - guest orders should still be viewable
-      logger.warn('Error getting session for order lookup', error as Error)
+      // logger.warn() only accepts 2 arguments: message and context (not error separately)
+      logger.warn('Error getting session for order lookup', { 
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      })
     }
     
     // ========================================================================

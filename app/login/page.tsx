@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { signIn, getSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -12,8 +12,16 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Mail, Lock, LogIn, Shield, ArrowLeft, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
-export default function LoginPage() {
+// ============================================================================
+// LOGIN CONTENT COMPONENT - Wrapped in Suspense for useSearchParams
+// ============================================================================
+// WHY: useSearchParams() requires Suspense boundary in Next.js 13+ App Router
+// This component uses useSearchParams and is wrapped in Suspense to prevent build errors
+function LoginContent() {
   const router = useRouter()
+  // useSearchParams hook - reads query parameters from URL
+  // WHY: We need to check for success messages from URL params (e.g., ?message=account-created)
+  // NOTE: This must be wrapped in Suspense boundary for Next.js App Router
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -23,6 +31,7 @@ export default function LoginPage() {
   const [message, setMessage] = useState<string | null>(null)
 
   // Check for success messages from URL params
+  // WHY: After account creation, we redirect to login with a success message
   useEffect(() => {
     const urlMessage = searchParams.get('message')
     if (urlMessage === 'account-created') {
@@ -191,5 +200,33 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+// ============================================================================
+// MAIN EXPORT - Wrapped in Suspense for useSearchParams
+// ============================================================================
+// WHY: useSearchParams() requires Suspense boundary in Next.js 13+ App Router
+// This prevents build errors during static generation
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <Card className="shadow-xl">
+            <CardContent className="pt-6">
+              <div className="flex justify-center items-center py-12">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading login page...</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }

@@ -59,7 +59,11 @@ const ADMIN_SETUP_CONFIG = {
       
       return !!adminUser
     } catch (error) {
-      logger.warn('Error checking for admin account', error as Error)
+      // logger.warn() only accepts 2 arguments: message and context (not error separately)
+      logger.warn('Error checking for admin account', { 
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      })
       return false
     }
   }

@@ -12,9 +12,14 @@ import { Button } from '@/components/ui/button'
 import { CheckCircle, Package, Mail, Home } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 
-export default function CheckoutSuccessPage() {
+// ============================================================================
+// SUCCESS CONTENT COMPONENT - Wrapped in Suspense for useSearchParams
+// ============================================================================
+// WHY: useSearchParams() requires Suspense boundary in Next.js 13+ App Router
+// This component uses useSearchParams and is wrapped in Suspense to prevent build errors
+function CheckoutSuccessContent() {
   // ============================================================================
   // URL PARAMETERS - Get order ID from URL
   // ============================================================================
@@ -22,6 +27,7 @@ export default function CheckoutSuccessPage() {
   // useSearchParams hook - reads query parameters from URL
   // WHY: Order ID is passed in URL query string (e.g., ?orderId=ORDER-123)
   // This gives us access to the order ID for display
+  // NOTE: This must be wrapped in Suspense boundary for Next.js App Router
   const searchParams = useSearchParams()
   
   // Get order ID from URL parameters
@@ -276,5 +282,28 @@ export default function CheckoutSuccessPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+// ============================================================================
+// MAIN EXPORT - Wrapped in Suspense for useSearchParams
+// ============================================================================
+// WHY: useSearchParams() requires Suspense boundary in Next.js 13+ App Router
+// This prevents build errors during static generation
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="flex justify-center items-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading order confirmation...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <CheckoutSuccessContent />
+    </Suspense>
   )
 }

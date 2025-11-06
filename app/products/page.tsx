@@ -7,7 +7,7 @@
 // It includes search, filtering, and product cards with images and prices
 // Customers can browse products, filter by category, and add items to cart
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
@@ -45,7 +45,12 @@ interface Category {
   description?: string
 }
 
-export default function ProductsPage() {
+// ============================================================================
+// PRODUCTS CONTENT COMPONENT - Wrapped in Suspense for useSearchParams
+// ============================================================================
+// WHY: useSearchParams() requires Suspense boundary in Next.js 13+ App Router
+// This component uses useSearchParams and is wrapped in Suspense to prevent build errors
+function ProductsContent() {
   // ============================================================================
   // URL QUERY PARAMETERS - Read category filter from URL
   // ============================================================================
@@ -54,6 +59,7 @@ export default function ProductsPage() {
   // WHY: When users click on a category from the categories page, the URL will be
   // /products?category=Accessories. We need to read this to set the initial filter.
   // Example: /products?category=Gaming → searchParams.get('category') = "Gaming"
+  // NOTE: This must be wrapped in Suspense boundary for Next.js App Router
   const searchParams = useSearchParams()
   
   // Get category from URL query parameter
@@ -510,6 +516,29 @@ export default function ProductsPage() {
         )}
       </div>
     </div>
+  )
+}
+
+// ============================================================================
+// MAIN EXPORT - Wrapped in Suspense for useSearchParams
+// ============================================================================
+// WHY: useSearchParams() requires Suspense boundary in Next.js 13+ App Router
+// This prevents build errors during static generation
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading products...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <ProductsContent />
+    </Suspense>
   )
 }
 
