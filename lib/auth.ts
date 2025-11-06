@@ -53,6 +53,8 @@ export const authOptions: NextAuthOptions = {
 
         try {
           // Use local database for authentication
+          // CRITICAL FOR VERCEL: If file system fails, this will use in-memory storage
+          // WHY: On Vercel, file system is read-only - database operations are handled gracefully
           const user = await localDb.findUserByEmail(credentials.email)
           
           if (!user) {
@@ -77,7 +79,15 @@ export const authOptions: NextAuthOptions = {
           }
 
         } catch (error) {
-          logger.error('Unexpected error during authentication', error as Error, { email: credentials.email })
+          // CRITICAL: Log detailed error information for debugging
+          // WHY: In production (Vercel), we need detailed logs to diagnose issues
+          logger.error('Unexpected error during authentication', error as Error, { 
+            email: credentials.email,
+            errorMessage: (error as Error).message,
+            errorStack: (error as Error).stack
+          })
+          // Return null instead of throwing - prevents 500 error page
+          // WHY: Better to show login error than crash with 500
           return null
         }
       }
