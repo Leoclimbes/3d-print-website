@@ -93,11 +93,14 @@ export default function CustomerManagementPage() {
     customer.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const getStatusBadgeVariant = (status: string) => {
+  // Maps customer status to valid Badge component variants
+  // Badge component only accepts: "default" | "secondary" | "destructive" | "outline"
+  // Using "default" for active (primary color) and "secondary" for inactive (muted color)
+  const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
-      case 'active': return 'success'
-      case 'inactive': return 'secondary'
-      default: return 'secondary'
+      case 'active': return 'default'  // Changed from 'success' to 'default' - valid Badge variant
+      case 'inactive': return 'secondary'  // Keep 'secondary' - already valid
+      default: return 'secondary'  // Fallback to secondary for unknown statuses
     }
   }
 
